@@ -61,7 +61,7 @@ export default function Layout() {
   const adminLinks = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, category: 'MENU' },
     { name: 'Usuários & Licenças', path: '/admin/users', icon: Users, category: 'MENU' },
-    { name: 'Integração App', path: '/admin/integration', icon: Smartphone, category: 'MENU' },
+    { name: 'Player Android', path: '/admin/integration', icon: Smartphone, category: 'MENU' },
     { name: 'Configurações', path: '/admin/settings', icon: Settings, category: 'GERAL' },
   ];
 

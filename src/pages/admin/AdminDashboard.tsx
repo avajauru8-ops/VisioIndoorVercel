@@ -211,8 +211,8 @@ export default function AdminDashboard() {
             >
               <Smartphone className="w-5 h-5 text-emerald-600" />
               <div className="text-left">
-                <p className="text-xs font-bold">Mapeamento de APK</p>
-                <p className="text-[9px] text-[#8b9aa5]">Configuração de arquivos do totem</p>
+                <p className="text-xs font-bold">Player Android</p>
+                <p className="text-[9px] text-[#8b9aa5]">Gerenciar APK, banner e integração</p>
               </div>
             </Link>
           </div>

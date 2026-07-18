@@ -46,8 +46,8 @@ export default function AdminSettings() {
       
       if (file) {
         formData.append('logo', file);
-      } else if (settings.logo_url) {
-        formData.append('logo_url', settings.logo_url);
+      } else {
+        formData.append('logo_url', settings.logo_url || '');
       }
 
       if (apkFile) {
@@ -113,9 +113,23 @@ export default function AdminSettings() {
                        <span className="text-[10px] font-bold text-white text-center uppercase tracking-widest">Trocar<br/>Logo</span>
                      </div>
                   </div>
-                  <p className="text-xs text-zinc-400 font-medium max-w-xs">
-                     Recomendado: Formato horizontal, fundo transparente, altura máxima de 60px.
-                  </p>
+                  <div>
+                     {(settings.logo_url || file) && (
+                       <button
+                         type="button"
+                         onClick={() => {
+                           setSettings({ ...settings, logo_url: '' });
+                           setFile(null);
+                         }}
+                         className="text-xs font-bold text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-wider mb-2 block"
+                       >
+                         Remover Logomarca
+                       </button>
+                     )}
+                     <p className="text-xs text-zinc-400 font-medium max-w-xs">
+                        Recomendado: Formato horizontal, fundo transparente, altura máxima de 60px.
+                     </p>
+                  </div>
                </div>
             </div>
          </div>

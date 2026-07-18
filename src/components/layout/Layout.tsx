@@ -89,22 +89,24 @@ export default function Layout() {
         <div className="p-6 border-b border-[#e8edf2] flex items-center justify-between">
           <div className="flex items-center gap-2">
             {sysSettings.logo_url ? (
-              <img src={sysSettings.logo_url} alt="Logo" className="h-8 max-w-[120px] object-contain shrink-0" />
+              <img src={sysSettings.logo_url} alt="Logo" className="h-8 max-w-[140px] object-contain shrink-0" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
-                <div className="w-4 h-4 rounded-full border border-emerald-600 flex items-center justify-center font-bold text-[8px] text-[#0b462c]">
-                  V
+              <>
+                <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
+                  <div className="w-4 h-4 rounded-full border border-emerald-600 flex items-center justify-center font-bold text-[8px] text-[#0b462c]">
+                    V
+                  </div>
                 </div>
-              </div>
+                <div>
+                  <h1 className="text-base font-extrabold tracking-tight text-[#0b462c] uppercase truncate max-w-[120px]">
+                    {sysSettings.nome_painel || 'VISIOINDOOR'}
+                  </h1>
+                  <p className="text-[9px] text-[#8b9aa5] uppercase tracking-widest font-bold">
+                    {user?.nivel === 'admin' ? 'Administrador' : 'Mídia Indoor'}
+                  </p>
+                </div>
+              </>
             )}
-            <div>
-              <h1 className="text-base font-extrabold tracking-tight text-[#0b462c] uppercase truncate max-w-[120px]">
-                {sysSettings.nome_painel || 'VISIOINDOOR'}
-              </h1>
-              <p className="text-[9px] text-[#8b9aa5] uppercase tracking-widest font-bold">
-                {user?.nivel === 'admin' ? 'Administrador' : 'Mídia Indoor'}
-              </p>
-            </div>
           </div>
           <button 
             onClick={() => setIsMobileSidebarOpen(false)}

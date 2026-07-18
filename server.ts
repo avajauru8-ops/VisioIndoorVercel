@@ -488,4 +488,5 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
+// Export app for serverless function support (Vercel redeployment trigger)
 export default app;

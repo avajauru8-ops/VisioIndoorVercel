@@ -8,9 +8,12 @@ import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { getDb, initDb } from './src/db/index.js';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+  ? (() => { throw new Error('JWT_SECRET environment variable is mandatory in production!'); })()
+  : crypto.randomBytes(32).toString('hex'));
 
 // Helpers
 const mapId = (doc: any) => doc ? { ...doc, id: doc._id.toString() } : null;
@@ -22,12 +25,20 @@ const upload = multer({
   limits: { fileSize: 500 * 1024 * 1024 } // 500MB
 });
 
-async function handleFileUpload(file: Express.Multer.File): Promise<string> {
+async function handleFileUpload(file: Express.Multer.File, allowedExtensions: string[]): Promise<string> {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!allowedExtensions.includes(ext)) {
+    throw new Error(`Tipo de arquivo não permitido: apenas extensões ${allowedExtensions.join(', ')} são aceitas.`);
+  }
+
   const isVercel = process.env.VERCEL === '1';
+  const sanitizedOriginal = path.basename(file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
+  const filename = `${Date.now()}-${sanitizedOriginal}`;
+
   if (isVercel) {
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       const { put } = await import('@vercel/blob');
-      const blob = await put(`uploads/${Date.now()}-${file.originalname}`, file.buffer, { access: 'public' });
+      const blob = await put(`uploads/${filename}`, file.buffer, { access: 'public' });
       return blob.url;
     } else {
       throw new Error("Vercel Blob Storage is not configured. Add BLOB_READ_WRITE_TOKEN.");
@@ -37,7 +48,6 @@ async function handleFileUpload(file: Express.Multer.File): Promise<string> {
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    const filename = `${Date.now()}-${file.originalname}`;
     fs.writeFileSync(path.join(uploadDir, filename), file.buffer);
     return `/uploads/${filename}`;
   }
@@ -92,7 +102,8 @@ const requireAdmin = (req: any, res: any, next: any) => {
 // --- Auth Routes ---
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const email = String(req.body.email || '');
+    const senha = String(req.body.senha || '');
     const db = getDb();
     const user = await db.collection('usuarios').findOne({ email });
     
@@ -100,11 +111,14 @@ app.post('/api/auth/login', async (req, res) => {
       const token = jwt.sign({ id: user._id.toString(), email: user.email, nivel: user.nivel, nome: user.nome }, JWT_SECRET, { expiresIn: '24h' });
       res.json({ token, user: { id: user._id.toString(), email: user.email, nome: user.nome, nivel: user.nivel } });
     } else {
-      res.status(401).json({ error: 'Credenciais invalidas' });
+      // Delay to protect against brute-force attacks
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      res.status(401).json({ error: 'Credenciais inválidas' });
     }
   } catch (err: any) {
     console.error("Login error", err);
-    res.status(500).json({ error: err.message, stack: err.stack });
+    // Avoid stack leakage in responses
+    res.status(500).json({ error: 'Ocorreu um erro interno no servidor.' });
   }
 });
 
@@ -170,10 +184,10 @@ app.put('/api/admin/settings', authenticateToken, requireAdmin, upload.fields([{
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     if (files) {
       if (files['logo'] && files['logo'][0]) {
-        logo_url = await handleFileUpload(files['logo'][0]);
+        logo_url = await handleFileUpload(files['logo'][0], ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
       }
       if (files['apk'] && files['apk'][0]) {
-        apk_file_url = await handleFileUpload(files['apk'][0]);
+        apk_file_url = await handleFileUpload(files['apk'][0], ['.apk']);
       }
     }
     
@@ -208,7 +222,7 @@ app.post('/api/agency/profile', authenticateToken, upload.single('logo'), async 
     const { nome, cpf_cnpj, endereco, cidade, estado, whatsapp, cidades_atuacao } = req.body;
     let logo_url = req.body.logo_url;
     if (req.file) {
-      logo_url = await handleFileUpload(req.file);
+      logo_url = await handleFileUpload(req.file, ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
     }
     
     const db = getDb();
@@ -322,7 +336,7 @@ app.post('/api/playlists', authenticateToken, upload.single('arquivo'), async (r
     const { totem_id, titulo, tipo_midia, tempo_exibicao, data_inicio, data_fim, url, arquivo_url: bodyArquivoUrl } = req.body;
     let finalUrl = bodyArquivoUrl || url || '';
     if (req.file) {
-      finalUrl = await handleFileUpload(req.file);
+      finalUrl = await handleFileUpload(req.file, ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.webm', '.avi', '.mov']);
     }
     
     const db = getDb();
@@ -349,7 +363,7 @@ app.put('/api/playlists/:id', authenticateToken, upload.single('arquivo'), async
     const { totem_id, titulo, tipo_midia, tempo_exibicao, data_inicio, data_fim, url, arquivo_url: bodyArquivoUrl } = req.body;
     let finalUrl = bodyArquivoUrl || url;
     if (req.file) {
-       finalUrl = await handleFileUpload(req.file);
+       finalUrl = await handleFileUpload(req.file, ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.webm', '.avi', '.mov']);
     }
     
     const updateFields: any = {

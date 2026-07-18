@@ -519,8 +519,11 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
       };
     });
 
-    // Retornar a playlist diretamente como um array (o app Android espera um JSONArray)
-    res.json(playlist);
+    // Retornar a playlist no formato esperado pelo Totem
+    res.json({
+      totem_id: deviceIdClean,
+      playlist
+    });
   } catch (err: any) {
     res.json({ erro: "Erro interno no servidor.", detalhe: err.message });
   }

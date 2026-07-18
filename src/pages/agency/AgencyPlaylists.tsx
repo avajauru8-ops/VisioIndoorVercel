@@ -32,6 +32,7 @@ export default function AgencyPlaylists() {
 
   // Form State - Midia
   const [selectedTotem, setSelectedTotem] = useState('');
+  const [formTotemId, setFormTotemId] = useState('');
   const [titulo, setTitulo] = useState('');
   const [tipoMidia, setTipoMidia] = useState<'video' | 'imagem'>('imagem');
   const [tempoExibicao, setTempoExibicao] = useState(15);
@@ -50,7 +51,7 @@ export default function AgencyPlaylists() {
       setTotems(tData);
       setPlaylists(pData);
       setUseBlob(!!configData?.useBlob);
-      if (tData.length > 0 && !selectedTotem) setSelectedTotem(tData[0].id.toString());
+      if (tData.length > 0 && !selectedTotem) setSelectedTotem('');
     } catch (err) {
       console.error(err);
     } finally {
@@ -64,7 +65,7 @@ export default function AgencyPlaylists() {
 
   const handleEdit = (item: Playlist) => {
     setEditingId(item.id);
-    setSelectedTotem(item.totem_id ? item.totem_id.toString() : '');
+    setFormTotemId(item.totem_id ? item.totem_id : '');
     setTempoExibicao(item.tempo_exibicao);
     
     // Format dates for datetime-local input
@@ -82,6 +83,7 @@ export default function AgencyPlaylists() {
     setEditingId(null);
     setTitulo('');
     setFile(null);
+    setFormTotemId('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,7 +93,7 @@ export default function AgencyPlaylists() {
 
     try {
       let bodyData: any = {
-        totem_id: selectedTotem ? selectedTotem : null,
+        totem_id: formTotemId ? formTotemId : null,
         titulo,
         tipo_midia: tipoMidia,
         tempo_exibicao: Number(tempoExibicao),
@@ -118,7 +120,7 @@ export default function AgencyPlaylists() {
       } else {
         // Fallback to standard Multipart Form Data upload
         const formData = new FormData();
-        formData.append('totem_id', selectedTotem);
+        formData.append('totem_id', formTotemId);
         formData.append('titulo', titulo);
         formData.append('tipo_midia', tipoMidia);
         formData.append('tempo_exibicao', tempoExibicao.toString());
@@ -195,6 +197,20 @@ export default function AgencyPlaylists() {
             
             <div className="p-6 overflow-y-auto flex-1">
                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Tela de Exibição</label>
+                      <select 
+                        className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                        value={formTotemId}
+                        onChange={(e) => setFormTotemId(e.target.value)}
+                      >
+                         <option value="">Todas as Telas (Global)</option>
+                         {totems.map(t => (
+                            <option key={t.id} value={t.id}>{t.nome} ({t.device_id})</option>
+                         ))}
+                      </select>
+                    </div>
+
                     <div>
                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Título</label>
                       <input type="text" required value={titulo} onChange={e=>setTitulo(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />

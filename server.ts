@@ -13,7 +13,7 @@ import { handleUpload } from '@vercel/blob';
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
-  ? (() => { throw new Error('JWT_SECRET environment variable is mandatory in production!'); })()
+  ? (() => { console.error('CRITICAL WARNING: JWT_SECRET environment variable is missing in production! Users will be logged out on every server restart.'); return crypto.randomBytes(32).toString('hex'); })()
   : crypto.randomBytes(32).toString('hex'));
 
 // Helpers

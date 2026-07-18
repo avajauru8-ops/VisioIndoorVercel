@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiFetch } from '../../lib/api';
 import { 
   LayoutDashboard, 
   Users, 
@@ -29,6 +30,29 @@ export default function Layout() {
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [sysSettings, setSysSettings] = useState<any>({
+    nome_painel: 'VisioIndoor',
+    logo_url: '',
+    show_apk_banner: true,
+    apk_banner_title: 'Player Android',
+    apk_banner_desc: 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
+    apk_banner_btn_text: 'Instalar Player',
+    apk_file_url: ''
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await apiFetch('/api/admin/settings');
+        if (data) setSysSettings(data);
+      } catch (err) {
+        console.error('Erro ao carregar configurações no layout:', err);
+      }
+    };
+    if (isAuthenticated) {
+      loadSettings();
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -64,14 +88,18 @@ export default function Layout() {
         {/* Brand Logo */}
         <div className="p-6 border-b border-[#e8edf2] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
-              <div className="w-4 h-4 rounded-full border border-emerald-600 flex items-center justify-center font-bold text-[8px] text-[#0b462c]">
-                V
+            {sysSettings.logo_url ? (
+              <img src={sysSettings.logo_url} alt="Logo" className="h-8 max-w-[120px] object-contain shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
+                <div className="w-4 h-4 rounded-full border border-emerald-600 flex items-center justify-center font-bold text-[8px] text-[#0b462c]">
+                  V
+                </div>
               </div>
-            </div>
+            )}
             <div>
-              <h1 className="text-base font-extrabold tracking-tight text-[#0b462c]">
-                VISIO<span className="text-emerald-500 font-medium">INDOOR</span>
+              <h1 className="text-base font-extrabold tracking-tight text-[#0b462c] uppercase truncate max-w-[120px]">
+                {sysSettings.nome_painel || 'VISIOINDOOR'}
               </h1>
               <p className="text-[9px] text-[#8b9aa5] uppercase tracking-widest font-bold">
                 {user?.nivel === 'admin' ? 'Administrador' : 'Mídia Indoor'}
@@ -151,27 +179,39 @@ export default function Layout() {
       </div>
 
       {/* Sidebar Banner */}
-      <div className="px-4 py-2 shrink-0 border-t border-[#e8edf2] bg-zinc-50/50">
-        <div className="my-4 p-4 rounded-2xl bg-gradient-to-br from-[#0b462c] to-[#082a1b] text-white text-xs relative overflow-hidden shadow-sm">
-          <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-emerald-500/20 blur-lg"></div>
-          <div className="relative z-10 space-y-2">
-            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm">
-              📲
+      {sysSettings.show_apk_banner && (
+        <div className="px-4 py-2 shrink-0 border-t border-[#e8edf2] bg-zinc-50/50">
+          <div className="my-4 p-4 rounded-2xl bg-gradient-to-br from-[#0b462c] to-[#082a1b] text-white text-xs relative overflow-hidden shadow-sm">
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-emerald-500/20 blur-lg"></div>
+            <div className="relative z-10 space-y-2">
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm">
+                📲
+              </div>
+              <p className="font-bold text-white text-xs leading-tight">{sysSettings.apk_banner_title || 'Player Android'}</p>
+              <p className="text-[10px] text-emerald-200/80 leading-normal">
+                {sysSettings.apk_banner_desc || 'Baixe o APK para rodar suas playlists em TVs ou Totens.'}
+              </p>
+              {sysSettings.apk_file_url ? (
+                <a 
+                  href={sysSettings.apk_file_url} 
+                  download="totemplayer.apk"
+                  className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[10px] uppercase py-2 rounded-xl transition-all shadow-sm"
+                >
+                  {sysSettings.apk_banner_btn_text || 'Instalar Player'}
+                </a>
+              ) : (
+                <Link 
+                  to="/admin/integration"
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[10px] uppercase py-2 rounded-xl transition-all shadow-sm"
+                >
+                  {sysSettings.apk_banner_btn_text || 'Instalar Player'}
+                </Link>
+              )}
             </div>
-            <p className="font-bold text-white text-xs leading-tight">Player Android</p>
-            <p className="text-[10px] text-emerald-200/80 leading-normal">
-              Baixe o APK para rodar suas playlists em TVs ou Totens.
-            </p>
-            <Link 
-              to="/admin/integration"
-              onClick={() => setIsMobileSidebarOpen(false)}
-              className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[10px] uppercase py-2 rounded-xl transition-all shadow-sm"
-            >
-              Instalar Player
-            </Link>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 
@@ -221,7 +261,7 @@ export default function Layout() {
                 placeholder="Buscar..." 
                 className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-full pl-9 pr-10 py-2 text-xs text-[#0b462c] placeholder-zinc-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-sans" 
               />
-              <span className="hidden sm:inline absolute right-3 top-1/2 -translate-y-1/2 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 shadow-sm pointer-events-none">
+              <span className="hidden sm:inline absolute right-3 top-1/2 -translate-y-1/2 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 shadow-sm pointer-none">
                 ⌘ F
               </span>
             </div>

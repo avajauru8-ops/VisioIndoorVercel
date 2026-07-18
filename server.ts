@@ -141,18 +141,54 @@ app.put('/api/admin/users/:id/license', authenticateToken, requireAdmin, async (
 app.get('/api/admin/settings', authenticateToken, async (req, res) => {
   const db = getDb();
   const settings = await db.collection('configuracoes_admin').findOne({});
-  res.json(mapId(settings) || { nome_painel: 'VisioIndoor', logo_url: '' });
+  const defaultSettings = {
+    nome_painel: 'VisioIndoor',
+    logo_url: '',
+    show_apk_banner: true,
+    apk_banner_title: 'Player Android',
+    apk_banner_desc: 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
+    apk_banner_btn_text: 'Instalar Player',
+    apk_file_url: ''
+  };
+  res.json({ ...defaultSettings, ...mapId(settings) });
 });
 
-app.put('/api/admin/settings', authenticateToken, requireAdmin, upload.single('logo'), async (req, res) => {
+app.put('/api/admin/settings', authenticateToken, requireAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'apk', maxCount: 1 }]), async (req, res) => {
   try {
-    const { nome_painel } = req.body;
+    const { 
+      nome_painel, 
+      show_apk_banner, 
+      apk_banner_title, 
+      apk_banner_desc, 
+      apk_banner_btn_text 
+    } = req.body;
+    
     let logo_url = req.body.logo_url;
-    if (req.file) {
-      logo_url = await handleFileUpload(req.file);
+    let apk_file_url = req.body.apk_file_url;
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    if (files) {
+      if (files['logo'] && files['logo'][0]) {
+        logo_url = await handleFileUpload(files['logo'][0]);
+      }
+      if (files['apk'] && files['apk'][0]) {
+        apk_file_url = await handleFileUpload(files['apk'][0]);
+      }
     }
+    
     const db = getDb();
-    await db.collection('configuracoes_admin').updateOne({}, { $set: { nome_painel, logo_url } }, { upsert: true });
+    await db.collection('configuracoes_admin').updateOne({}, { 
+      $set: { 
+        nome_painel, 
+        logo_url,
+        show_apk_banner: show_apk_banner === 'true',
+        apk_banner_title: apk_banner_title || 'Player Android',
+        apk_banner_desc: apk_banner_desc || 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
+        apk_banner_btn_text: apk_banner_btn_text || 'Instalar Player',
+        apk_file_url
+      } 
+    }, { upsert: true });
+    
     res.json({ message: 'Configurações salvas' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

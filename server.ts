@@ -464,20 +464,21 @@ app.post('/api/blob/upload', async (req, res) => {
 });
 
 // --- TV Box / Totem Endpoint API ---
-app.get(['/api.php', '/api/get_playlist.php'], async (req, res) => {
+app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
   try {
-    const { device_id } = req.query;
-    if (!device_id) {
+    const rawDeviceId = req.query.device_id || req.body?.device_id;
+    if (!rawDeviceId) {
       return res.json({ erro: "Identificador do dispositivo nao fornecido." });
     }
 
+    const deviceIdClean = String(rawDeviceId).trim();
     const db = getDb();
-    const totem = await db.collection('totens').findOne({ device_id: String(device_id) });
+    const totem = await db.collection('totens').findOne({ device_id: deviceIdClean });
     
     if (!totem) {
       return res.json({ 
           erro: "Dispositivo nao autorizado.",
-          device_id,
+          device_id: deviceIdClean,
           mensagem: "Cadastre este ID de dispositivo no seu painel de controle."
       });
     }

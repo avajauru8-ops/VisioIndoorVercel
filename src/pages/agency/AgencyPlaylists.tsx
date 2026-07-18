@@ -126,7 +126,7 @@ export default function AgencyPlaylists() {
   const now = new Date();
 
   return (
-    <div className="space-y-6 flex flex-col h-[calc(100vh-8rem)]">
+    <div className="space-y-6 flex flex-col lg:h-[calc(100vh-8rem)] h-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h2 className="text-2xl font-extrabold text-[#0b462c] tracking-tight">Gestão de Playlist</h2>
@@ -148,9 +148,9 @@ export default function AgencyPlaylists() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:overflow-hidden overflow-visible">
          {/* Sidebar Forms */}
-         <div className="col-span-1 bg-white border border-[#e8edf2] rounded-[24px] flex flex-col overflow-hidden relative shadow-sm h-full">
+         <div className="col-span-1 bg-white border border-[#e8edf2] rounded-[24px] flex flex-col overflow-hidden relative shadow-sm lg:h-full h-auto">
             {editingId && (
                <div className="bg-emerald-500/10 border-b border-emerald-100 py-2.5 text-center shrink-0">
                   <span className="text-emerald-700 text-[10px] font-bold uppercase tracking-widest animate-pulse">Editando Mídia</span>
@@ -218,7 +218,7 @@ export default function AgencyPlaylists() {
          </div>
 
          {/* Playlist Table */}
-         <div className="col-span-1 lg:col-span-2 bg-white border border-[#e8edf2] rounded-[24px] overflow-hidden flex flex-col h-full shadow-sm">
+         <div className="col-span-1 lg:col-span-2 bg-white border border-[#e8edf2] rounded-[24px] overflow-hidden flex flex-col lg:h-full h-auto shadow-sm">
             <div className="px-6 py-4 border-b border-[#e8edf2] flex justify-between items-center bg-zinc-50/50 shrink-0">
                <h3 className="text-[#0b462c] text-xs font-bold uppercase tracking-wider">Mídias Ativas {selectedTotem ? 'Nesta Tela' : '(Global)'}</h3>
             </div>

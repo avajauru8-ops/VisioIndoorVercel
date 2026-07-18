@@ -25,6 +25,7 @@ export default function AgencyPlaylists() {
   const [totems, setTotems] = useState<Totem[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [useBlob, setUseBlob] = useState(false);
   
   // Edit State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -41,12 +42,14 @@ export default function AgencyPlaylists() {
 
   const loadData = async () => {
     try {
-      const [tData, pData] = await Promise.all([
+      const [tData, pData, configData] = await Promise.all([
         apiFetch('/api/totems'),
-        apiFetch('/api/playlists')
+        apiFetch('/api/playlists'),
+        apiFetch('/api/config').catch(() => ({ useBlob: false }))
       ]);
       setTotems(tData);
       setPlaylists(pData);
+      setUseBlob(!!configData?.useBlob);
       if (tData.length > 0 && !selectedTotem) setSelectedTotem(tData[0].id.toString());
     } catch (err) {
       console.error(err);
@@ -87,19 +90,47 @@ export default function AgencyPlaylists() {
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('totem_id', selectedTotem);
-      formData.append('titulo', titulo);
-      formData.append('tipo_midia', tipoMidia);
-      formData.append('tempo_exibicao', tempoExibicao.toString());
-      formData.append('data_inicio', new Date(dataInicio).toISOString());
-      formData.append('data_fim', new Date(dataFim).toISOString());
-      if (file) formData.append('arquivo', file);
+      let bodyData: any = {
+        totem_id: selectedTotem ? Number(selectedTotem) : null,
+        titulo,
+        tipo_midia: tipoMidia,
+        tempo_exibicao: Number(tempoExibicao),
+        data_inicio: new Date(dataInicio).toISOString(),
+        data_fim: new Date(dataFim).toISOString(),
+      };
 
-      await apiFetch(editingId ? `/api/playlists/${editingId}` : '/api/playlists', {
-        method: editingId ? 'PUT' : 'POST',
-        body: formData,
-      });
+      if (file && useBlob) {
+        // Direct Client-Side Upload to Vercel Blob to bypass 4.5MB server limit
+        const { upload } = await import('@vercel/blob/client');
+        const blob = await upload(file.name, file, {
+          access: 'public',
+          handleUploadUrl: '/api/blob/upload'
+        });
+        bodyData.arquivo_url = blob.url;
+      }
+
+      if (useBlob) {
+        // Send JSON representation
+        await apiFetch(editingId ? `/api/playlists/${editingId}` : '/api/playlists', {
+          method: editingId ? 'PUT' : 'POST',
+          body: JSON.stringify(bodyData),
+        });
+      } else {
+        // Fallback to standard Multipart Form Data upload
+        const formData = new FormData();
+        formData.append('totem_id', selectedTotem);
+        formData.append('titulo', titulo);
+        formData.append('tipo_midia', tipoMidia);
+        formData.append('tempo_exibicao', tempoExibicao.toString());
+        formData.append('data_inicio', new Date(dataInicio).toISOString());
+        formData.append('data_fim', new Date(dataFim).toISOString());
+        if (file) formData.append('arquivo', file);
+
+        await apiFetch(editingId ? `/api/playlists/${editingId}` : '/api/playlists', {
+          method: editingId ? 'PUT' : 'POST',
+          body: formData,
+        });
+      }
 
       cancelEdit();
       loadData();
@@ -142,7 +173,7 @@ export default function AgencyPlaylists() {
           >
              <option value="">Todas as Telas (Global)</option>
              {totems.map(t => (
-               <option key={t.id} value={t.id}>{t.nome} ({t.device_id})</option>
+                <option key={t.id} value={t.id}>{t.nome} ({t.device_id})</option>
              ))}
           </select>
         </div>
@@ -163,117 +194,137 @@ export default function AgencyPlaylists() {
             )}
             
             <div className="p-6 overflow-y-auto flex-1">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                   <div>
-                     <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Título</label>
-                     <input type="text" required value={titulo} onChange={e=>setTitulo(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
-                   </div>
-                   
-                   <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Tipo</label>
-                       <select value={tipoMidia} onChange={e=>setTipoMidia(e.target.value as any)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all">
-                         <option value="imagem">Imagem</option>
-                         <option value="video">Vídeo</option>
-                       </select>
-                     </div>
-                     <div>
-                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Duração (s)</label>
-                       <input type="number" min="1" required value={tempoExibicao} onChange={e=>setTempoExibicao(Number(e.target.value))} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
-                     </div>
-                   </div>
+                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Título</label>
+                      <input type="text" required value={titulo} onChange={e=>setTitulo(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Tipo</label>
+                        <select value={tipoMidia} onChange={e=>setTipoMidia(e.target.value as any)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all">
+                          <option value="imagem">Imagem</option>
+                          <option value="video">Vídeo</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Duração (s)</label>
+                        <input type="number" required value={tempoExibicao} onChange={e=>setTempoExibicao(Number(e.target.value))} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
+                      </div>
+                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Início</label>
-                       <input type="datetime-local" required value={dataInicio} onChange={e=>setDataInicio(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [color-scheme:light]" />
-                     </div>
-                     <div>
-                       <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Fim</label>
-                       <input type="datetime-local" required value={dataFim} onChange={e=>setDataFim(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [color-scheme:light]" />
-                     </div>
-                   </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Início</label>
+                        <input type="datetime-local" required value={dataInicio} onChange={e=>setDataInicio(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [color-scheme:light]" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Fim</label>
+                        <input type="datetime-local" required value={dataFim} onChange={e=>setDataFim(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [color-scheme:light]" />
+                      </div>
+                    </div>
 
-                   <div>
-                     <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Arquivo {editingId ? '(Opcional)' : '(Drag & Drop)'}</label>
-                     <div className="border border-dashed border-zinc-200 bg-[#f4f6f8] rounded-xl px-4 py-6 text-center hover:bg-[#eef1f4] transition-colors relative cursor-pointer shadow-inner">
-                        <input type="file" required={!editingId} onChange={e => setFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,video/*" />
-                        <UploadCloud className="w-6 h-6 text-zinc-400 mx-auto mb-2" />
-                        <p className="text-[10px] font-bold text-[#0b462c] uppercase tracking-wider">{file ? file.name : (editingId ? 'Manter atual' : 'Selecionar arquivo')}</p>
-                     </div>
-                   </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Arquivo (Drag & Drop)</label>
+                      <div className="relative border-2 border-dashed border-zinc-200 hover:border-emerald-500 rounded-2xl p-6 text-center transition-colors bg-[#fcfdfe]">
+                        <input 
+                          type="file" 
+                          accept={tipoMidia === 'imagem' ? 'image/*' : 'video/*'}
+                          onChange={e => setFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <UploadCloud className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                        <span className="text-xs text-zinc-500 font-bold block">
+                          {file ? file.name.toUpperCase() : 'SELECIONE OU ARRASTE O ARQUIVO'}
+                        </span>
+                      </div>
+                    </div>
 
-                   <div className="flex gap-2 mt-6">
-                     {editingId && (
-                        <button type="button" onClick={cancelEdit} className="w-1/3 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-full py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center border border-zinc-200">
-                          <X className="w-3.5 h-3.5 mr-1" />
+                    <div className="pt-4 flex gap-2">
+                      {editingId && (
+                        <button type="button" onClick={cancelEdit} className="flex-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm">
+                          Cancelar
                         </button>
-                     )}
-                     <button type="submit" disabled={uploading} className={`${editingId ? 'w-2/3' : 'w-full'} bg-[#0b462c] hover:bg-[#082a1b] text-white rounded-full py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-50 shadow-sm`}>
-                       {uploading ? (editingId ? 'Salvando...' : 'Enviando...') : (editingId ? 'Salvar' : 'Adicionar')}
-                     </button>
-                   </div>
-                </form>
+                      )}
+                      <button 
+                        type="submit" 
+                        disabled={uploading}
+                        className="flex-1 bg-[#0b462c] hover:bg-[#082a1b] disabled:bg-zinc-300 text-white font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                      >
+                        {uploading ? 'ENVIANDO...' : editingId ? 'SALVAR ALTERAÇÕES' : 'ADICIONAR MÍDIA'}
+                      </button>
+                    </div>
+                 </form>
             </div>
          </div>
 
-         {/* Playlist Table */}
-         <div className="col-span-1 lg:col-span-2 bg-white border border-[#e8edf2] rounded-[24px] overflow-hidden flex flex-col lg:h-full h-auto shadow-sm">
-            <div className="px-6 py-4 border-b border-[#e8edf2] flex justify-between items-center bg-zinc-50/50 shrink-0">
-               <h3 className="text-[#0b462c] text-xs font-bold uppercase tracking-wider">Mídias Ativas {selectedTotem ? 'Nesta Tela' : '(Global)'}</h3>
+         {/* Playlist Grid */}
+         <div className="col-span-1 lg:col-span-2 bg-white border border-[#e8edf2] rounded-[24px] flex flex-col overflow-hidden shadow-sm lg:h-full h-auto">
+            <div className="border-b border-[#e8edf2] p-4 bg-zinc-50/50">
+               <h3 className="text-[#0b462c] text-xs font-bold uppercase tracking-wider">Mídias Ativas nesta Tela</h3>
             </div>
-            <div className="flex-1 overflow-auto">
-               <table className="w-full text-left text-xs font-mono text-zinc-600">
-                  <thead className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 border-b border-[#e8edf2] sticky top-0 bg-zinc-50 z-10">
-                    <tr>
-                      <th className="px-6 py-4">Mídia</th>
-                      <th className="px-6 py-4">Duração</th>
-                      <th className="px-6 py-4">Validade</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {filteredPlaylists.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-[#8b9aa5] font-sans">Nenhuma mídia ativa.</td>
-                    </tr>
-                  ) : (
-                    filteredPlaylists.map(item => {
-                      const isExpired = new Date(item.data_fim) < now;
-                      const isEditing = editingId === item.id;
-                      
-                      return (
-                      <tr key={item.id} className={`border-b border-[#e8edf2] hover:bg-zinc-50/50 transition-colors ${isEditing ? 'bg-emerald-50/40 border-emerald-300' : ''}`}>
-                        <td className="px-6 py-4 font-sans text-zinc-800 font-bold flex items-center gap-3">
-                           {item.tipo_midia === 'video' ? <Film className="w-4 h-4 text-[#0b462c] shrink-0" /> : <ImageIcon className="w-4 h-4 text-emerald-500 shrink-0" />}
-                           <span className="truncate max-w-[150px] block" title={item.titulo}>{item.titulo}</span>
-                        </td>
-                        <td className="px-6 py-4">{item.tempo_exibicao}s</td>
-                        <td className="px-6 py-4 font-sans text-zinc-500">{format(new Date(item.data_fim), 'dd/MM/yyyy HH:mm')}</td>
-                        <td className="px-6 py-4">
-                           {isExpired ? (
-                             <span className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full border border-rose-100 text-[9px] uppercase font-bold tracking-wider">EXPIRADO</span>
-                           ) : item.ativo === 1 ? (
-                             <span className="bg-[#e8f5ed] text-emerald-600 px-2.5 py-1 rounded-full border border-emerald-100 text-[9px] uppercase font-bold tracking-wider">ATIVO</span>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+               {filteredPlaylists.map(item => {
+                 const isExpired = new Date(item.data_fim) < now;
+                 return (
+                   <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-[#e8edf2] hover:bg-zinc-50/50 transition-all gap-4">
+                      <div className="flex items-center gap-4">
+                         <div className="w-16 h-16 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200">
+                           {item.tipo_midia === 'video' ? (
+                             <Film className="w-6 h-6 text-zinc-400" />
                            ) : (
-                             <span className="bg-zinc-100 text-zinc-500 px-2.5 py-1 rounded-full border border-zinc-200 text-[9px] uppercase font-bold tracking-wider">INATIVO</span>
+                             <img src={item.arquivo_url} alt={item.titulo} className="w-full h-full object-cover" />
                            )}
-                        </td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap font-sans">
-                           <button onClick={() => handleEdit(item)} className="text-zinc-400 hover:text-[#0b462c] p-1.5 transition-all rounded-lg hover:bg-zinc-100 mr-2" title="Editar">
-                             <Edit2 className="w-4 h-4 inline" />
-                           </button>
-                           <button onClick={() => handleDelete(item.id)} className="text-zinc-400 hover:text-rose-500 p-1.5 transition-all rounded-lg hover:bg-rose-50" title="Excluir">
-                             <Trash2 className="w-4 h-4 inline" />
-                           </button>
-                        </td>
-                      </tr>
-                    )
-                    })
-                  )}
-                  </tbody>
-               </table>
+                         </div>
+                         <div>
+                            <h4 className="text-sm font-extrabold text-zinc-800 leading-tight">{item.titulo}</h4>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-semibold bg-zinc-100 text-zinc-600">
+                                {item.tempo_exibicao}s
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-semibold bg-zinc-100 text-zinc-600 uppercase">
+                                {item.tipo_midia}
+                              </span>
+                              {isExpired ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-semibold bg-rose-50 text-rose-600 uppercase">
+                                  Expirado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-semibold bg-emerald-50 text-emerald-600 uppercase">
+                                  Ativo
+                                </span>
+                              )}
+                            </div>
+                         </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-zinc-100">
+                         <div className="text-left sm:text-right">
+                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider leading-none">Validade</p>
+                            <p className="text-xs text-zinc-500 font-medium font-sans mt-1">
+                              Até {format(new Date(item.data_fim), 'dd/MM/yyyy HH:mm')}
+                            </p>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <button onClick={() => handleEdit(item)} className="p-2 text-zinc-400 hover:text-[#0b462c] hover:bg-[#e8f5ed]/30 rounded-lg transition-all border border-transparent hover:border-[#e8edf2]">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(item.id)} className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all border border-transparent hover:border-rose-100">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                 );
+               })}
+               {filteredPlaylists.length === 0 && (
+                 <div className="h-full flex flex-col items-center justify-center text-zinc-400 py-12">
+                   <MonitorPlay className="w-12 h-12 mb-3 opacity-30 text-[#8b9aa5]" />
+                   <p className="text-sm font-semibold">Nenhuma mídia ativa.</p>
+                 </div>
+               )}
             </div>
          </div>
       </div>

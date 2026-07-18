@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb';
 import { getDb, initDb } from './src/db/index.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { handleUpload } from '@vercel/blob';
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
@@ -426,6 +427,40 @@ app.delete('/api/playlists/:id', authenticateToken, async (req: any, res) => {
    const db = getDb();
    await db.collection('campanhas').deleteOne({ _id: new ObjectId(req.params.id), usuario_id: req.user.id });
    res.json({ message: 'Midia deletada' });
+});
+
+// --- Vercel Blob Configuration and Upload signature routes ---
+app.get('/api/config', (req, res) => {
+  res.json({
+    useBlob: !!process.env.BLOB_READ_WRITE_TOKEN
+  });
+});
+
+app.post('/api/blob/upload', async (req, res) => {
+  try {
+    const jsonResponse = await handleUpload({
+      body: req.body,
+      request: req,
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // Generate direct upload permission token
+        return {
+          allowedContentTypes: [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+            'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+            'application/vnd.android.package-archive'
+          ],
+          tokenPayload: JSON.stringify({}),
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // Log upload completed successfully
+        console.log('Vercel Blob upload completed:', blob.url);
+      },
+    });
+    res.json(jsonResponse);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // --- TV Box / Totem Endpoint API ---

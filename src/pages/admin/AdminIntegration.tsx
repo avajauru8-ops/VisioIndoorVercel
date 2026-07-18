@@ -153,7 +153,7 @@ export default function AdminIntegration() {
           </div>
         )}
 
-        <div className="pt-4 border-t border-[#e8edf2]">
+        <div className={`pt-4 ${settings.show_apk_banner ? 'border-t border-[#e8edf2]' : ''}`}>
           <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Arquivo APK do Player</label>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-xs text-zinc-600 truncate font-mono h-11 flex items-center shadow-inner">

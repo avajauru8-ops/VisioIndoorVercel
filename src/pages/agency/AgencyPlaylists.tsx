@@ -4,14 +4,14 @@ import { MonitorPlay, UploadCloud, Film, Image as ImageIcon, Trash2, Edit2, X } 
 import { format } from 'date-fns';
 
 interface Totem {
-  id: number;
+  id: string;
   nome: string;
   device_id: string;
 }
 
 interface Playlist {
-  id: number;
-  totem_id: number | null;
+  id: string;
+  totem_id: string | null;
   titulo: string;
   tipo_midia: 'video' | 'imagem' | string;
   tempo_exibicao: number;
@@ -28,7 +28,7 @@ export default function AgencyPlaylists() {
   const [useBlob, setUseBlob] = useState(false);
   
   // Edit State
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State - Midia
   const [selectedTotem, setSelectedTotem] = useState('');
@@ -91,7 +91,7 @@ export default function AgencyPlaylists() {
 
     try {
       let bodyData: any = {
-        totem_id: selectedTotem ? Number(selectedTotem) : null,
+        totem_id: selectedTotem ? selectedTotem : null,
         titulo,
         tipo_midia: tipoMidia,
         tempo_exibicao: Number(tempoExibicao),
@@ -142,7 +142,7 @@ export default function AgencyPlaylists() {
     }
   };
   
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
      if (confirm('Excluir mídia?')) {
        await apiFetch(`/api/playlists/${id}`, { method: 'DELETE' });
        if (editingId === id) cancelEdit();
@@ -151,7 +151,7 @@ export default function AgencyPlaylists() {
   };
 
   const filteredPlaylists = selectedTotem 
-    ? playlists.filter(p => p.totem_id === Number(selectedTotem) || p.totem_id === null)
+    ? playlists.filter(p => p.totem_id === selectedTotem || p.totem_id === null)
     : playlists;
 
   const now = new Date();

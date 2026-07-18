@@ -76,56 +76,64 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
+      {/* Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+        <div>
+          <h2 className="text-2xl font-extrabold text-[#0b462c] tracking-tight">Gestão de Usuários</h2>
+          <p className="text-xs text-[#8b9aa5] font-medium mt-1">Gerencie clientes, agências e suas respectivas licenças do sistema.</p>
+        </div>
+      </div>
+
       {showForm && (
-        <div className="bg-[#111113] border border-zinc-800 rounded-xl p-6">
-          <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-4">Cadastrar Novo Usuário</h3>
+        <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm">
+          <h3 className="text-[#0b462c] text-xs font-bold uppercase tracking-wider mb-4">Cadastrar Novo Usuário</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nome</label>
-               <input type="text" required value={nome} onChange={e=>setNome(e.target.value)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-4 py-2 text-white text-sm focus:border-indigo-500 outline-none" />
+               <input type="text" required value={nome} onChange={e=>setNome(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none transition-all" />
              </div>
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">CPF (Obrigatório)</label>
-               <input type="text" required value={cpf} onChange={e=>setCpf(e.target.value)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-4 py-2 text-white text-sm font-mono focus:border-indigo-500 outline-none" />
+               <input type="text" required value={cpf} onChange={e=>setCpf(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none transition-all" />
              </div>
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Email</label>
-               <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-4 py-2 text-white text-sm font-mono focus:border-indigo-500 outline-none" />
+               <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none transition-all" />
              </div>
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Senha Provisória</label>
-               <input type="password" required value={senha} onChange={e=>setSenha(e.target.value)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-4 py-2 text-white text-sm font-mono focus:border-indigo-500 outline-none" />
+               <input type="password" required value={senha} onChange={e=>setSenha(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none transition-all" />
              </div>
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nível de Acesso</label>
-               <select value={nivel} onChange={e=>setNivel(e.target.value as any)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-3 py-2 text-white text-sm focus:border-indigo-500 outline-none">
+               <select value={nivel} onChange={e=>setNivel(e.target.value as any)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none">
                  <option value="agencia">Agência (Cliente)</option>
                  <option value="admin">Administrador</option>
                </select>
              </div>
              <div>
                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Data de Expiração da Licença</label>
-               <input type="date" required value={validade} onChange={e=>setValidade(e.target.value)} className="w-full bg-[#09090b] border border-zinc-800 rounded px-3 py-2 text-white text-sm font-mono focus:border-indigo-500 outline-none [color-scheme:dark]" />
+               <input type="date" required value={validade} onChange={e=>setValidade(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none [color-scheme:light]" />
              </div>
              <div className="md:col-span-2 flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white border border-transparent hover:border-zinc-700 rounded transition-colors">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-bold uppercase tracking-widest transition-colors">Salvar Usuário</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-800 border border-zinc-200 hover:border-zinc-300 rounded-full transition-colors">Cancelar</button>
+                <button type="submit" className="px-5 py-2.5 bg-[#0b462c] hover:bg-[#082a1b] text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm">Salvar Usuário</button>
              </div>
           </form>
         </div>
       )}
 
       {editingLicense && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div className="bg-[#111113] border border-zinc-800 rounded-xl p-6 w-full max-w-md">
-              <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-4">Gerenciar Licença: {editingLicense.nome}</h3>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+           <div className="bg-white border border-[#e8edf2] rounded-[24px] p-8 w-full max-w-md shadow-lg animate-in fade-in zoom-in-95 duration-200">
+              <h3 className="text-[#0b462c] text-sm font-extrabold uppercase tracking-wider mb-4">Gerenciar Licença: {editingLicense.nome}</h3>
               <form onSubmit={handleUpdateLicense} className="space-y-4">
                  <div>
                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Status da Licença</label>
                    <select 
                      value={editingLicense.status_licenca} 
                      onChange={e => setEditingLicense({...editingLicense, status_licenca: e.target.value as any})} 
-                     className="w-full bg-[#09090b] border border-zinc-800 rounded px-3 py-2 text-white text-sm focus:border-indigo-500 outline-none"
+                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none"
                    >
                      <option value="ativa">Ativa</option>
                      <option value="expirada">Expirada / Suspensa</option>
@@ -137,66 +145,66 @@ export default function AdminUsers() {
                      type="date" 
                      value={editingLicense.validade_licenca.split('T')[0]} 
                      onChange={e => setEditingLicense({...editingLicense, validade_licenca: e.target.value})} 
-                     className="w-full bg-[#09090b] border border-zinc-800 rounded px-3 py-2 text-white text-sm font-mono focus:border-indigo-500 outline-none [color-scheme:dark]" 
+                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none [color-scheme:light]" 
                    />
                  </div>
                  <div className="flex justify-end gap-3 pt-6">
-                    <button type="button" onClick={() => setEditingLicense(null)} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white border border-transparent hover:border-zinc-700 rounded transition-colors">Cancelar</button>
-                    <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold uppercase tracking-widest transition-colors">Atualizar Licença</button>
+                    <button type="button" onClick={() => setEditingLicense(null)} className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-800 border border-zinc-200 hover:border-zinc-300 rounded-full transition-colors">Cancelar</button>
+                    <button type="submit" className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm">Atualizar Licença</button>
                  </div>
               </form>
            </div>
         </div>
       )}
 
-      <div className="flex-1 bg-[#111113] border border-zinc-800 rounded-xl flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Gestão de Usuários</h2>
+      <div className="flex-1 bg-white border border-[#e8edf2] rounded-[24px] flex flex-col overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-[#e8edf2] flex justify-between items-center bg-zinc-50/50">
+          <h2 className="text-sm font-extrabold text-[#0b462c] uppercase tracking-wider">Gestão de Usuários</h2>
           <button 
             onClick={() => setShowForm(!showForm)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-4 py-2 rounded transition-all flex items-center gap-2"
+            className="bg-[#0b462c] hover:bg-[#082a1b] text-white text-[10px] font-bold px-4 py-2.5 rounded-full transition-all flex items-center gap-2 shadow-sm"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3.5 h-3.5" />
             NOVO USUÁRIO
           </button>
         </div>
          <div className="overflow-x-auto">
            <table className="w-full text-left">
-              <thead className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-800 bg-zinc-900/30">
+              <thead className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 border-b border-[#e8edf2] bg-zinc-50/50">
                  <tr>
                     <th className="px-6 py-4">Nome / Email</th>
                     <th className="px-6 py-4">Nível</th>
                     <th className="px-6 py-4">Licença</th>
-                    <th className="px-6 py-4 font-serif italic uppercase">Validade</th>
+                    <th className="px-6 py-4 font-sans uppercase">Validade</th>
                     <th className="px-6 py-4 text-right">Ações</th>
                  </tr>
               </thead>
-              <tbody className="text-xs font-mono text-zinc-400">
+              <tbody className="text-xs font-mono text-zinc-600">
                  {users.map(u => (
-                    <tr key={u.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20 transition-colors">
-                       <td className="px-6 py-4">
-                          <div className="font-sans text-white font-medium">{u.nome}</div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5">{u.email}</div>
+                    <tr key={u.id} className="border-b border-[#e8edf2] hover:bg-zinc-50/50 transition-colors">
+                       <td className="px-6 py-4 font-sans">
+                          <div className="text-zinc-800 font-bold text-sm leading-none">{u.nome}</div>
+                          <div className="text-[10px] text-zinc-400 font-mono mt-1.5 leading-none">{u.email}</div>
                        </td>
                        <td className="px-6 py-4 font-sans text-[10px] uppercase font-bold tracking-widest">
                           {u.nivel === 'admin' ? (
-                             <span className="text-indigo-400">Admin</span>
+                             <span className="text-[#0b462c]">Admin</span>
                           ) : (
-                             <span className="text-zinc-500">Agência</span>
+                             <span className="text-zinc-400">Agência</span>
                           )}
                        </td>
                        <td className="px-6 py-4">
                           {u.status_licenca === 'ativa' ? (
-                            <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded border border-emerald-500/30 text-[10px] uppercase font-bold tracking-widest">ATIVA</span>
+                            <span className="bg-[#e8f5ed] text-emerald-600 px-2.5 py-1 rounded-full border border-emerald-100 text-[9px] uppercase font-bold tracking-wider">ATIVA</span>
                           ) : (
-                            <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded border border-rose-500/30 text-[10px] uppercase font-bold tracking-widest">EXPIRADA</span>
+                            <span className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full border border-rose-100 text-[9px] uppercase font-bold tracking-wider">EXPIRADA</span>
                           )}
                        </td>
-                       <td className="px-6 py-4">
+                       <td className="px-6 py-4 text-zinc-500 font-sans">
                           {format(new Date(u.validade_licenca), 'dd/MM/yyyy')}
                        </td>
-                       <td className="px-6 py-4 text-right">
-                          <button onClick={() => setEditingLicense(u)} className="text-zinc-500 hover:text-indigo-400 transition-colors text-[10px] font-bold tracking-widest uppercase border border-zinc-800 hover:border-indigo-500/50 rounded px-3 py-1.5 bg-zinc-900/50">
+                       <td className="px-6 py-4 text-right font-sans">
+                          <button onClick={() => setEditingLicense(u)} className="text-zinc-500 hover:text-[#0b462c] transition-all text-[9px] font-extrabold tracking-widest uppercase border border-zinc-200 hover:border-[#e8edf2] rounded-full px-4 py-2 bg-zinc-50 hover:bg-[#e8f5ed]/30 shadow-xs">
                              Editar
                           </button>
                        </td>

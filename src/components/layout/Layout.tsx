@@ -1,7 +1,21 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, Users, Settings, LogOut, MonitorPlay, Tv, Landmark, FileText, Newspaper, Smartphone } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Settings, 
+  LogOut, 
+  MonitorPlay, 
+  Tv, 
+  Landmark, 
+  FileText, 
+  Newspaper, 
+  Smartphone, 
+  Search, 
+  Mail, 
+  Bell 
+} from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,91 +32,193 @@ export default function Layout() {
   }
 
   const adminLinks = [
-    { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { name: 'Usuários & Licenças', path: '/admin/users', icon: Users },
-    { name: 'Configurações', path: '/admin/settings', icon: Settings },
-    { name: 'Integração App', path: '/admin/integration', icon: Smartphone },
+    { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, category: 'MENU' },
+    { name: 'Usuários & Licenças', path: '/admin/users', icon: Users, category: 'MENU' },
+    { name: 'Integração App', path: '/admin/integration', icon: Smartphone, category: 'MENU' },
+    { name: 'Configurações', path: '/admin/settings', icon: Settings, category: 'GERAL' },
   ];
 
   const agencyLinks = [
-    { name: 'Dashboard', path: '/agency', icon: LayoutDashboard },
-    { name: 'Minhas Telas', path: '/agency/totems', icon: Tv },
-    { name: 'Playlists', path: '/agency/playlists', icon: MonitorPlay },
-    { name: 'Utilizar Notícias', path: '/agency/news', icon: Newspaper },
-    { name: 'Dados da Agência', path: '/agency/profile', icon: Landmark },
-    { name: 'Mídia Kit Web', path: '/agency/media-kit', icon: Newspaper },
-    { name: 'Gerador de Contratos', path: '/agency/contracts', icon: FileText },
+    { name: 'Dashboard', path: '/agency', icon: LayoutDashboard, category: 'MENU' },
+    { name: 'Minhas Telas', path: '/agency/totems', icon: Tv, category: 'MENU' },
+    { name: 'Playlists', path: '/agency/playlists', icon: MonitorPlay, category: 'MENU' },
+    { name: 'Utilizar Notícias', path: '/agency/news', icon: Newspaper, category: 'MENU' },
+    { name: 'Mídia Kit Web', path: '/agency/media-kit', icon: Newspaper, category: 'MENU' },
+    { name: 'Gerador de Contratos', path: '/agency/contracts', icon: FileText, category: 'MENU' },
+    { name: 'Dados da Agência', path: '/agency/profile', icon: Landmark, category: 'GERAL' },
   ];
 
-  const links = user?.nivel === 'admin' ? adminLinks : agencyLinks;
+  const rawLinks = user?.nivel === 'admin' ? adminLinks : agencyLinks;
+
+  // Group links by category
+  const menuLinks = rawLinks.filter(link => link.category === 'MENU');
+  const generalLinks = rawLinks.filter(link => link.category === 'GERAL');
 
   return (
-    <div className="flex h-screen bg-[#09090b] text-zinc-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#f4f6f8] text-zinc-800 font-sans overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#111113] border-r border-zinc-800 flex flex-col">
-        <div className="p-6 border-b border-zinc-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center font-bold text-white italic">V</div>
-            <h1 className="text-xl font-bold tracking-tight text-white">VISIO<span className="text-indigo-400">INDOR</span></h1>
-          </div>
-          <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-widest">{user?.nivel === 'admin' ? 'Administrador' : 'SaaS Mídia Indoor'}</p>
-        </div>
-        <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path || location.pathname.startsWith(link.path + '/');
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
-                  isActive 
-                    ? "bg-zinc-800 text-white" 
-                    : "text-zinc-400 hover:bg-zinc-800/50"
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-medium">{link.name}</span>
-              </Link>
-            )
-          })}
-        </nav>
-        <div className="p-4 border-t border-zinc-800 bg-zinc-900/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-white">
-                  {user?.nome.charAt(0)}
-               </div>
-               <div className="overflow-hidden">
-                 <p className="text-xs font-bold text-white truncate">{user?.nome}</p>
-                 <p className="text-[10px] text-zinc-500 truncate">{user?.email}</p>
-               </div>
+      <aside className="w-66 bg-white border-r border-[#e8edf2] flex flex-col justify-between shrink-0">
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Brand Logo - Styled like Donezo */}
+          <div className="p-6 border-b border-[#e8edf2] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
+                <div className="w-4 h-4 rounded-full border border-emerald-600 flex items-center justify-center font-bold text-[8px] text-[#0b462c]">
+                  V
+                </div>
+              </div>
+              <div>
+                <h1 className="text-base font-extrabold tracking-tight text-[#0b462c]">
+                  VISIO<span className="text-emerald-500 font-medium">INDOOR</span>
+                </h1>
+                <p className="text-[9px] text-[#8b9aa5] uppercase tracking-widest font-bold">
+                  {user?.nivel === 'admin' ? 'Administrador' : 'Mídia Indoor'}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={logout}
-              className="p-2 text-zinc-500 hover:text-rose-400 transition-colors"
-              title="Sair"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex-1 py-6 px-4 space-y-6 overflow-y-auto">
+            {/* Category: MENU */}
+            <div>
+              <p className="px-3 text-[10px] font-bold text-[#8b9aa5] uppercase tracking-widest mb-3">Menu</p>
+              <nav className="space-y-1">
+                {menuLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = location.pathname === link.path || (link.path !== '/agency' && link.path !== '/admin' && location.pathname.startsWith(link.path + '/'));
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer group relative",
+                        isActive 
+                          ? "bg-[#e8f5ed] text-[#0b462c] font-semibold" 
+                          : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                      )}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-emerald-600 rounded-r" />
+                      )}
+                      <Icon className={cn("w-5 h-5", isActive ? "text-emerald-600" : "text-zinc-400 group-hover:text-zinc-600")} />
+                      <span className="text-sm">{link.name}</span>
+                    </Link>
+                  )
+                })}
+              </nav>
+            </div>
+
+            {/* Category: GERAL */}
+            <div>
+              <p className="px-3 text-[10px] font-bold text-[#8b9aa5] uppercase tracking-widest mb-3">Geral</p>
+              <nav className="space-y-1">
+                {generalLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = location.pathname === link.path || location.pathname.startsWith(link.path + '/');
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer group relative",
+                        isActive 
+                          ? "bg-[#e8f5ed] text-[#0b462c] font-semibold" 
+                          : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                      )}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-emerald-600 rounded-r" />
+                      )}
+                      <Icon className={cn("w-5 h-5", isActive ? "text-emerald-600" : "text-zinc-400 group-hover:text-zinc-600")} />
+                      <span className="text-sm">{link.name}</span>
+                    </Link>
+                  )
+                })}
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Banner - Mobile App Styled */}
+        <div className="px-4 py-2 shrink-0 border-t border-[#e8edf2] bg-zinc-50/50">
+          <div className="my-4 p-4 rounded-2xl bg-gradient-to-br from-[#0b462c] to-[#082a1b] text-white text-xs relative overflow-hidden shadow-sm">
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-emerald-500/20 blur-lg"></div>
+            <div className="relative z-10 space-y-2">
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm">
+                📲
+              </div>
+              <p className="font-bold text-white text-xs leading-tight">Player Android</p>
+              <p className="text-[10px] text-emerald-200/80 leading-normal">
+                Baixe o APK para rodar suas playlists em TVs ou Totens.
+              </p>
+              <a 
+                href="/admin/integration" 
+                className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[10px] uppercase py-2 rounded-xl transition-all shadow-sm"
+              >
+                Instalar Player
+              </a>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b border-zinc-800 bg-[#111113] flex items-center justify-between px-8">
-           <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              {links.find(l => location.pathname === l.path)?.name || 'VisioIndor'}
-           </h2>
-           <div className="flex items-center gap-4">
-              <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-500/20">
-                 LICENÇA ATIVA
-              </span>
-           </div>
+        {/* Header - Styled like Donezo */}
+        <header className="h-20 bg-white border-b border-[#e8edf2] flex items-center justify-between px-8 shrink-0">
+          {/* Left: Search Box */}
+          <div className="relative w-80">
+            <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-zinc-400" />
+            </span>
+            <input 
+              type="text" 
+              placeholder="Buscar telas, playlists..." 
+              className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-full pl-9 pr-12 py-2 text-xs text-[#0b462c] placeholder-zinc-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-sans" 
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 shadow-sm pointer-events-none">
+              ⌘ F
+            </span>
+          </div>
+
+          {/* Right: Quick actions, notifications and Profile */}
+          <div className="flex items-center gap-6">
+            <button className="w-9 h-9 rounded-full bg-zinc-50 border border-[#e8edf2] flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-all relative">
+              <Mail className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
+            </button>
+            <button className="w-9 h-9 rounded-full bg-zinc-50 border border-[#e8edf2] flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-all relative">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
+            </button>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-zinc-200" />
+
+            {/* Profile Avatar Card */}
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-zinc-800 leading-none">{user?.nome}</p>
+                <p className="text-[10px] text-zinc-400 mt-1 leading-none truncate max-w-[120px]">{user?.email}</p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-[#0b462c] flex items-center justify-center text-xs font-extrabold text-white shadow-sm border border-emerald-100 relative">
+                {user?.nome.substring(0, 2).toUpperCase()}
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
+              </div>
+              <button
+                onClick={logout}
+                className="p-1.5 text-zinc-400 hover:text-rose-500 transition-all rounded-lg hover:bg-rose-50"
+                title="Sair"
+              >
+                <LogOut className="w-4.5 h-4.5" />
+              </button>
+            </div>
+          </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-8">
+
+        {/* Content Body Container */}
+        <div className="flex-1 overflow-y-auto p-8 relative">
           <Outlet />
         </div>
       </main>

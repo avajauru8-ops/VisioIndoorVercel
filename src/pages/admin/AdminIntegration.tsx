@@ -20,68 +20,68 @@ export default function AdminIntegration() {
   return (
     <div className="space-y-6 max-w-4xl">
       <header>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Integração com Aplicativo</h1>
-        <p className="text-zinc-400 mt-2">Dados e endpoints para configurar o aplicativo Android TotemPlayer.</p>
+        <h1 className="text-2xl font-extrabold text-[#0b462c] tracking-tight">Integração com Aplicativo</h1>
+        <p className="text-xs text-[#8b9aa5] font-medium mt-1">Dados e endpoints para configurar o aplicativo Android TotemPlayer.</p>
       </header>
 
-      <div className="bg-[#111113] border border-zinc-800 rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-zinc-800 flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+      <div className="bg-white border border-[#e8edf2] rounded-[24px] overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-[#e8edf2] flex items-center gap-4 bg-zinc-50/50">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100">
             <Smartphone className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Configuração do App Android</h2>
-            <p className="text-sm text-zinc-400">Insira esta URL no código-fonte do seu aplicativo Java/Android.</p>
+            <h2 className="text-base font-extrabold text-[#0b462c]">Configuração do App Android</h2>
+            <p className="text-xs text-zinc-400">Insira esta URL no código-fonte do seu aplicativo Java/Android.</p>
           </div>
         </div>
         
         <div className="p-6 space-y-6">
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-white">Endpoint Base (BASE_URL)</label>
-            <div className="flex bg-black/50 border border-zinc-800 rounded-lg p-1">
-              <div className="flex-1 px-4 py-2 text-sm text-zinc-300 font-mono truncate overflow-x-auto flex items-center">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Endpoint Base (BASE_URL)</label>
+            <div className="flex bg-[#f4f6f8] border border-zinc-200 rounded-xl p-1.5 items-center">
+              <div className="flex-1 px-3 py-1.5 text-xs text-zinc-700 font-mono truncate overflow-x-auto flex items-center">
                 {baseUrl}
               </div>
               <button
                 onClick={copyToClipboard}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#0b462c] hover:bg-[#082a1b] text-white rounded-xl transition-all text-xs font-bold shadow-sm"
               >
                 {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Copiado!' : 'Copiar URL'}
               </button>
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-[10px] text-zinc-400 font-medium">
               O aplicativo irá adicionar o Android ID automaticamente no final da URL.
             </p>
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-white">Como atualizar no código-fonte:</h3>
-            <div className="bg-black border border-zinc-800 rounded-lg p-4 font-mono text-sm overflow-x-auto relative group">
-              <div className="text-zinc-400">
-                <span className="text-indigo-400">private</span> <span className="text-indigo-400">static</span> <span className="text-indigo-400">final</span> <span className="text-emerald-400">String</span> BASE_URL = <span className="text-amber-400">"{baseUrl}"</span>;
+            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Como atualizar no código-fonte:</h3>
+            <div className="bg-[#f4f6f8] border border-zinc-200 rounded-xl p-4 font-mono text-xs overflow-x-auto relative group">
+              <div className="text-zinc-700">
+                <span className="text-emerald-700 font-bold">private</span> <span className="text-emerald-700 font-bold">static</span> <span className="text-emerald-700 font-bold">final</span> <span className="text-emerald-500 font-bold">String</span> BASE_URL = <span className="text-amber-600">"{baseUrl}"</span>;
               </div>
             </div>
-            <p className="text-sm text-zinc-400">
-              Procure pela variável <code className="bg-zinc-800 px-1 py-0.5 rounded text-indigo-300">BASE_URL</code> no arquivo <code className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-200">MainActivity.java</code> e substitua pelo valor acima.
+            <p className="text-xs text-zinc-500">
+              Procure pela variável <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-emerald-700 font-mono font-bold">BASE_URL</code> no arquivo <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-700 font-bold">MainActivity.java</code> e substitua pelo valor acima.
             </p>
           </div>
         </div>
       </div>
       
-      <div className="bg-[#111113] border border-zinc-800 rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-zinc-800 flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+      <div className="bg-white border border-[#e8edf2] rounded-[24px] overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-[#e8edf2] flex items-center gap-4 bg-zinc-50/50">
+          <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100">
             <Code className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Formato da Resposta JSON</h2>
-            <p className="text-sm text-zinc-400">O que o aplicativo recebe deste servidor.</p>
+            <h2 className="text-base font-extrabold text-[#0b462c]">Formato da Resposta JSON</h2>
+            <p className="text-xs text-zinc-400">O que o aplicativo recebe deste servidor.</p>
           </div>
         </div>
         
-        <div className="p-6 bg-black">
-          <pre className="text-sm text-zinc-300 font-mono overflow-x-auto">
+        <div className="p-6 bg-[#f4f6f8]">
+          <pre className="text-xs text-zinc-700 font-mono overflow-x-auto leading-relaxed">
 {`{
   "totem_id": 1,
   "device_id": "ABC123XYZ",

@@ -1,27 +1,26 @@
-import { MongoClient, Db } from 'mongodb';
-
-// ============================================
-// MYSQL CONFIGURATION (COMMENTED OUT)
-// ============================================
-/*
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST || 'localhost',
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || 'visioindoor',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+let pool: mysql.Pool | null = null;
 
 export async function initDb() {
   try {
+    pool = mysql.createPool({
+      host: process.env.MYSQL_HOST || 'localhost',
+      user: process.env.MYSQL_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || '',
+      database: process.env.MYSQL_DATABASE || 'visioindoor',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      charset: 'utf8mb4'
+    });
+
     const connection = await pool.getConnection();
     console.log('Connected to MySQL database.');
-    
-    // Auto-create basic tables if needed, or rely on manual DB dump
+
+    // Auto-create basic tables
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS usuarios (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,50 +35,59 @@ export async function initDb() {
       )
     `);
 
-    // Only create tables if they don't exist to not overwrite data
-    console.log('Ensure other tables are imported via phpMyAdmin or MySQL client.');
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS totens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        nome VARCHAR(255) NOT NULL,
+        device_id VARCHAR(255) UNIQUE NOT NULL,
+        status ENUM('online', 'offline', 'manutencao') NOT NULL DEFAULT 'offline',
+        ultima_sincronizacao DATETIME NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS campanhas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        totem_id INT NULL,
+        titulo VARCHAR(255) NOT NULL,
+        tipo_midia VARCHAR(50) NOT NULL,
+        tempo_exibicao INT NOT NULL,
+        data_inicio DATETIME NULL,
+        data_fim DATETIME NULL,
+        arquivo_url TEXT NOT NULL,
+        ativo TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+        FOREIGN KEY (totem_id) REFERENCES totens(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS configuracoes_admin (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nome_painel VARCHAR(255) DEFAULT 'VisioIndoor',
+        logo_url TEXT NULL,
+        show_apk_banner TINYINT(1) DEFAULT 1,
+        apk_banner_title VARCHAR(255) DEFAULT 'Player Android',
+        apk_banner_desc TEXT NULL,
+        apk_banner_btn_text VARCHAR(255) DEFAULT 'Instalar Player',
+        apk_file_url TEXT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
     connection.release();
   } catch (err) {
     console.error('Failed to connect to MySQL:', err);
-  }
-}
-
-export default pool;
-*/
-
-// ============================================
-// MONGODB CONFIGURATION
-// ============================================
-
-import dotenv from 'dotenv';
-dotenv.config();
-
-let client: MongoClient | null = null;
-let dbInstance: Db | null = null;
-
-export async function initDb() {
-  try {
-    const uri = process.env.MONGO_URI;
-    if (!uri) throw new Error('MONGO_URI is not set in environment variables');
-    
-    client = new MongoClient(uri);
-    await client.connect();
-    const dbName = process.env.MONGO_DB_NAME || 'visioindoor';
-    dbInstance = client.db(dbName);
-    console.log(`Connected to MongoDB database (${dbName}).`);
-
-    // Create unique indexes
-    await dbInstance.collection('usuarios').createIndex({ email: 1 }, { unique: true });
-    await dbInstance.collection('usuarios').createIndex({ cpf: 1 }, { unique: true });
-    await dbInstance.collection('totens').createIndex({ device_id: 1 }, { unique: true });
-
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
     throw err;
   }
 }
 
-export function getDb() {
-  if (!dbInstance) throw new Error('Database not initialized. Call initDb first.');
-  return dbInstance;
+export function getDb(): mysql.Pool {
+  if (!pool) throw new Error('Database not initialized. Call initDb first.');
+  return pool;
 }

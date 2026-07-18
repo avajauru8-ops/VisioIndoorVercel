@@ -36,8 +36,8 @@ export default function AgencyPlaylists() {
   const [titulo, setTitulo] = useState('');
   const [tipoMidia, setTipoMidia] = useState<'video' | 'imagem'>('imagem');
   const [tempoExibicao, setTempoExibicao] = useState(15);
-  const [dataInicio, setDataInicio] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-  const [dataFim, setDataFim] = useState(format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"));
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -63,6 +63,13 @@ export default function AgencyPlaylists() {
     loadData();
   }, []);
 
+  // Sync selected screen filter with the new media form
+  useEffect(() => {
+    if (!editingId) {
+      setFormTotemId(selectedTotem);
+    }
+  }, [selectedTotem, editingId]);
+
   const handleEdit = (item: Playlist) => {
     setEditingId(item.id);
     setFormTotemId(item.totem_id ? item.totem_id : '');
@@ -83,11 +90,11 @@ export default function AgencyPlaylists() {
     setEditingId(null);
     setTitulo('');
     setFile(null);
-    setFormTotemId('');
+    setFormTotemId(selectedTotem); // Reset to current filter instead of empty
     setTipoMidia('imagem');
     setTempoExibicao(15);
-    setDataInicio(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-    setDataFim(format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"));
+    setDataInicio('');
+    setDataFim('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

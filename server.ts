@@ -5,7 +5,6 @@ import fs from 'fs';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
 import { getDb, initDb } from './src/db/index.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -15,10 +14,6 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
   ? (() => { console.error('CRITICAL WARNING: JWT_SECRET environment variable is missing in production! Users will be logged out on every server restart.'); return crypto.randomBytes(32).toString('hex'); })()
   : crypto.randomBytes(32).toString('hex'));
-
-// Helpers
-const mapId = (doc: any) => doc ? { ...doc, id: doc._id.toString() } : null;
-const mapIds = (docs: any[]) => docs.map(mapId);
 
 // File Upload Config
 const upload = multer({ 
@@ -106,28 +101,30 @@ app.post('/api/auth/login', async (req, res) => {
     const email = String(req.body.email || '');
     const senha = String(req.body.senha || '');
     const db = getDb();
-    const user = await db.collection('usuarios').findOne({ email });
+    
+    const [rows]: any = await db.query('SELECT * FROM usuarios WHERE email = ? LIMIT 1', [email]);
+    const user = rows[0];
     
     if (user && bcrypt.compareSync(senha, user.senha)) {
-      const token = jwt.sign({ id: user._id.toString(), email: user.email, nivel: user.nivel, nome: user.nome }, JWT_SECRET, { expiresIn: '24h' });
-      res.json({ token, user: { id: user._id.toString(), email: user.email, nome: user.nome, nivel: user.nivel } });
+      const token = jwt.sign({ id: user.id.toString(), email: user.email, nivel: user.nivel, nome: user.nome }, JWT_SECRET, { expiresIn: '24h' });
+      res.json({ token, user: { id: user.id.toString(), email: user.email, nome: user.nome, nivel: user.nivel } });
     } else {
-      // Delay to protect against brute-force attacks
       await new Promise(resolve => setTimeout(resolve, 1500));
       res.status(401).json({ error: 'Credenciais inválidas' });
     }
   } catch (err: any) {
     console.error("Login error", err);
-    // Avoid stack leakage in responses
     res.status(500).json({ error: 'Ocorreu um erro interno no servidor.' });
   }
 });
 
 // --- Admin Routes ---
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
-  const db = getDb();
-  const users = await db.collection('usuarios').find().project({ senha: 0 }).toArray();
-  res.json(mapIds(users));
+  try {
+    const db = getDb();
+    const [users]: any = await db.query('SELECT id, nome, cpf, email, nivel, status_licenca, validade_licenca, created_at FROM usuarios');
+    res.json(users.map((u: any) => ({ ...u, id: u.id.toString() })));
+  } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
 app.post('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
@@ -135,135 +132,109 @@ app.post('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =
     const { nome, cpf, email, senha, nivel, validade_licenca } = req.body;
     const hash = bcrypt.hashSync(senha, 10);
     const db = getDb();
-    await db.collection('usuarios').insertOne({
-      nome, cpf, email, senha: hash, nivel, validade_licenca, status_licenca: 'ativa', created_at: new Date()
-    });
+    
+    const validadeFormatada = validade_licenca ? validade_licenca.replace('T', ' ').substring(0, 19) : null;
+    
+    await db.execute(
+      'INSERT INTO usuarios (nome, cpf, email, senha, nivel, validade_licenca, status_licenca, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [nome, cpf, email, hash, nivel, validadeFormatada, 'ativa']
+    );
     res.json({ message: 'Usuário criado com sucesso' });
   } catch (err: any) {
+    console.error(err);
     res.status(400).json({ error: 'Erro ao criar usuário, email ou CPF já existente' });
   }
 });
 
 app.put('/api/admin/users/:id/license', authenticateToken, requireAdmin, async (req, res) => {
-  const { status_licenca, validade_licenca } = req.body;
-  const db = getDb();
-  await db.collection('usuarios').updateOne(
-    { _id: new ObjectId(req.params.id) },
-    { $set: { status_licenca, validade_licenca } }
-  );
-  res.json({ message: 'Licença atualizada' });
+  try {
+    const { status_licenca, validade_licenca } = req.body;
+    const db = getDb();
+    const validadeFormatada = validade_licenca ? validade_licenca.replace('T', ' ').substring(0, 19) : null;
+    await db.execute('UPDATE usuarios SET status_licenca = ?, validade_licenca = ? WHERE id = ?', [status_licenca, validadeFormatada, req.params.id]);
+    res.json({ message: 'Licença atualizada' });
+  } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { nome, email, senha, nivel, status_licenca, validade_licenca } = req.body;
     const db = getDb();
-    
-    const updateFields: any = {
-      nome: String(nome),
-      email: String(email),
-      nivel: String(nivel),
-      status_licenca: String(status_licenca),
-      validade_licenca: String(validade_licenca)
-    };
+    const validadeFormatada = validade_licenca ? validade_licenca.replace('T', ' ').substring(0, 19) : null;
     
     if (senha && senha.trim() !== '') {
-      updateFields.senha = bcrypt.hashSync(senha, 10);
+      const hash = bcrypt.hashSync(senha, 10);
+      await db.execute(
+        'UPDATE usuarios SET nome = ?, email = ?, senha = ?, nivel = ?, status_licenca = ?, validade_licenca = ? WHERE id = ?',
+        [nome, email, hash, nivel, status_licenca, validadeFormatada, req.params.id]
+      );
+    } else {
+      await db.execute(
+        'UPDATE usuarios SET nome = ?, email = ?, nivel = ?, status_licenca = ?, validade_licenca = ? WHERE id = ?',
+        [nome, email, nivel, status_licenca, validadeFormatada, req.params.id]
+      );
     }
-    
-    await db.collection('usuarios').updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: updateFields }
-    );
     res.json({ message: 'Usuário atualizado com sucesso' });
   } catch (err: any) {
-    if (err.code === 11000) {
-      res.status(400).json({ error: 'O email já está em uso por outro usuário.' });
-    } else {
-      res.status(400).json({ error: 'Erro ao atualizar usuário.' });
-    }
+    res.status(400).json({ error: 'Erro ao atualizar usuário.' });
   }
 });
 
 app.get('/api/admin/settings', authenticateToken, async (req, res) => {
-  const db = getDb();
-  const settings = await db.collection('configuracoes_admin').findOne({});
-  const defaultSettings = {
-    nome_painel: 'VisioIndoor',
-    logo_url: '',
-    show_apk_banner: true,
-    apk_banner_title: 'Player Android',
-    apk_banner_desc: 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
-    apk_banner_btn_text: 'Instalar Player',
-    apk_file_url: ''
-  };
-  res.json({ ...defaultSettings, ...mapId(settings) });
+  try {
+    const db = getDb();
+    const [rows]: any = await db.query('SELECT * FROM configuracoes_admin LIMIT 1');
+    const settings = rows[0] || {};
+    
+    const defaultSettings = {
+      nome_painel: 'VisioIndoor',
+      logo_url: '',
+      show_apk_banner: true,
+      apk_banner_title: 'Player Android',
+      apk_banner_desc: 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
+      apk_banner_btn_text: 'Instalar Player',
+      apk_file_url: ''
+    };
+    
+    if (settings.id) settings.id = settings.id.toString();
+    if (settings.show_apk_banner !== undefined) {
+      settings.show_apk_banner = Boolean(settings.show_apk_banner);
+    }
+    
+    res.json({ ...defaultSettings, ...settings });
+  } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
 app.put('/api/admin/settings', authenticateToken, requireAdmin, upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'apk', maxCount: 1 }]), async (req, res) => {
   try {
-    const { 
-      nome_painel, 
-      show_apk_banner, 
-      apk_banner_title, 
-      apk_banner_desc, 
-      apk_banner_btn_text 
-    } = req.body;
-    
+    const { nome_painel, show_apk_banner, apk_banner_title, apk_banner_desc, apk_banner_btn_text } = req.body;
     let logo_url = req.body.logo_url;
     let apk_file_url = req.body.apk_file_url;
 
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     if (files) {
-      if (files['logo'] && files['logo'][0]) {
-        logo_url = await handleFileUpload(files['logo'][0], ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
-      }
-      if (files['apk'] && files['apk'][0]) {
-        apk_file_url = await handleFileUpload(files['apk'][0], ['.apk']);
-      }
+      if (files['logo'] && files['logo'][0]) logo_url = await handleFileUpload(files['logo'][0], ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
+      if (files['apk'] && files['apk'][0]) apk_file_url = await handleFileUpload(files['apk'][0], ['.apk']);
     }
     
     const db = getDb();
-    await db.collection('configuracoes_admin').updateOne({}, { 
-      $set: { 
-        nome_painel, 
-        logo_url,
-        show_apk_banner: show_apk_banner === 'true',
-        apk_banner_title: apk_banner_title || 'Player Android',
-        apk_banner_desc: apk_banner_desc || 'Baixe o APK para rodar suas playlists em TVs ou Totens.',
-        apk_banner_btn_text: apk_banner_btn_text || 'Instalar Player',
-        apk_file_url
-      } 
-    }, { upsert: true });
+    const [existing]: any = await db.query('SELECT id FROM configuracoes_admin LIMIT 1');
+    
+    const isShowBanner = show_apk_banner === 'true' ? 1 : 0;
+    
+    if (existing && existing.length > 0) {
+      await db.execute(
+        'UPDATE configuracoes_admin SET nome_painel=?, logo_url=?, show_apk_banner=?, apk_banner_title=?, apk_banner_desc=?, apk_banner_btn_text=?, apk_file_url=? WHERE id = ?',
+        [nome_painel, logo_url, isShowBanner, apk_banner_title || '', apk_banner_desc || '', apk_banner_btn_text || '', apk_file_url, existing[0].id]
+      );
+    } else {
+      await db.execute(
+        'INSERT INTO configuracoes_admin (nome_painel, logo_url, show_apk_banner, apk_banner_title, apk_banner_desc, apk_banner_btn_text, apk_file_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [nome_painel, logo_url, isShowBanner, apk_banner_title || '', apk_banner_desc || '', apk_banner_btn_text || '', apk_file_url]
+      );
+    }
     
     res.json({ message: 'Configurações salvas' });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Agency Routes ---
-app.get('/api/agency/profile', authenticateToken, async (req: any, res) => {
-  const db = getDb();
-  const profile = await db.collection('agencia').findOne({ usuario_id: req.user.id });
-  res.json(mapId(profile) || {});
-});
-
-app.post('/api/agency/profile', authenticateToken, upload.single('logo'), async (req: any, res) => {
-  try {
-    const { nome, cpf_cnpj, endereco, cidade, estado, whatsapp, cidades_atuacao } = req.body;
-    let logo_url = req.body.logo_url;
-    if (req.file) {
-      logo_url = await handleFileUpload(req.file, ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
-    }
-    
-    const db = getDb();
-    await db.collection('agencia').updateOne(
-      { usuario_id: req.user.id },
-      { $set: { nome: nome||'', cpf_cnpj: cpf_cnpj||'', endereco: endereco||null, cidade: cidade||null, estado: estado||null, whatsapp: whatsapp||null, cidades_atuacao: cidades_atuacao||null, logo_url: logo_url||null } },
-      { upsert: true }
-    );
-    res.json({ message: 'Perfil salvo' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -273,35 +244,30 @@ app.post('/api/agency/profile', authenticateToken, upload.single('logo'), async 
 app.get('/api/totems', authenticateToken, async (req: any, res) => {
   try {
     const db = getDb();
-    const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000);
-    await db.collection('totens').updateMany(
-      { $or: [ { ultima_sincronizacao: { $lt: twoMinsAgo } }, { ultima_sincronizacao: null } ] },
-      { $set: { status: 'offline' } }
-    );
+    
+    // Set offline for totems not synced in last 2 mins
+    await db.execute("UPDATE totens SET status = 'offline' WHERE ultima_sincronizacao < DATE_SUB(NOW(), INTERVAL 2 MINUTE) OR ultima_sincronizacao IS NULL");
 
-    let totems;
+    let query = '';
+    let params: any[] = [];
+    
     if (req.user.nivel === 'admin') {
-      const rawTotems = await db.collection('totens').find().toArray();
-      const users = await db.collection('usuarios').find().toArray();
-      const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
-
-      totems = rawTotems.map((t: any) => {
-        const creator = userMap.get(t.usuario_id);
-        return {
-          ...t,
-          data_cadastro: t._id.getTimestamp ? t._id.getTimestamp() : new Date(),
-          usuario_nome: creator ? creator.nome : 'N/A',
-          usuario_email: creator ? creator.email : 'N/A'
-        };
-      });
+      query = `SELECT t.*, u.nome as usuario_nome, u.email as usuario_email 
+               FROM totens t LEFT JOIN usuarios u ON t.usuario_id = u.id`;
     } else {
-      const rawTotems = await db.collection('totens').find({ usuario_id: req.user.id }).toArray();
-      totems = rawTotems.map((t: any) => ({
-        ...t,
-        data_cadastro: t._id.getTimestamp ? t._id.getTimestamp() : new Date()
-      }));
+      query = `SELECT * FROM totens WHERE usuario_id = ?`;
+      params.push(req.user.id);
     }
-    res.json(mapIds(totems));
+    
+    const [totems]: any = await db.query(query, params);
+    
+    const mappedTotems = totems.map((t: any) => ({
+      ...t,
+      id: t.id.toString(),
+      data_cadastro: t.created_at
+    }));
+    
+    res.json(mappedTotems);
   } catch(err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -311,9 +277,10 @@ app.post('/api/totems', authenticateToken, async (req: any, res) => {
   try {
     const { nome, device_id } = req.body;
     const db = getDb();
-    await db.collection('totens').insertOne({
-       usuario_id: req.user.id, nome, device_id, status: 'offline', ultima_sincronizacao: null
-    });
+    await db.execute(
+      "INSERT INTO totens (usuario_id, nome, device_id, status, ultima_sincronizacao) VALUES (?, ?, ?, 'offline', NULL)",
+      [req.user.id, nome, device_id]
+    );
     res.json({ message: 'Totem adicionado' });
   } catch (err: any) {
     res.status(400).json({ error: 'Erro ao adicionar totem, ID de dispositivo pode já existir' });
@@ -324,13 +291,11 @@ app.put('/api/totems/:id', authenticateToken, async (req: any, res) => {
   try {
     const { nome, device_id } = req.body;
     const db = getDb();
-    const query = req.user.nivel === 'admin' 
-      ? { _id: new ObjectId(req.params.id) } 
-      : { _id: new ObjectId(req.params.id), usuario_id: req.user.id };
-      
-    await db.collection('totens').updateOne(query, {
-      $set: { nome, device_id }
-    });
+    if (req.user.nivel === 'admin') {
+      await db.execute("UPDATE totens SET nome = ?, device_id = ? WHERE id = ?", [nome, device_id, req.params.id]);
+    } else {
+      await db.execute("UPDATE totens SET nome = ?, device_id = ? WHERE id = ? AND usuario_id = ?", [nome, device_id, req.params.id, req.user.id]);
+    }
     res.json({ message: 'Totem atualizado' });
   } catch (err: any) {
     res.status(400).json({ error: 'Erro ao atualizar totem' });
@@ -340,11 +305,11 @@ app.put('/api/totems/:id', authenticateToken, async (req: any, res) => {
 app.delete('/api/totems/:id', authenticateToken, async (req: any, res) => {
   try {
     const db = getDb();
-    const query = req.user.nivel === 'admin' 
-      ? { _id: new ObjectId(req.params.id) } 
-      : { _id: new ObjectId(req.params.id), usuario_id: req.user.id };
-      
-    await db.collection('totens').deleteOne(query);
+    if (req.user.nivel === 'admin') {
+      await db.execute("DELETE FROM totens WHERE id = ?", [req.params.id]);
+    } else {
+      await db.execute("DELETE FROM totens WHERE id = ? AND usuario_id = ?", [req.params.id, req.user.id]);
+    }
     res.json({ message: 'Totem removido' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -353,14 +318,19 @@ app.delete('/api/totems/:id', authenticateToken, async (req: any, res) => {
 
 // --- Playlists Routes ---
 app.get('/api/playlists', authenticateToken, async (req: any, res) => {
-  const db = getDb();
-  let campaigns;
-  if (req.user.nivel === 'admin') {
-    campaigns = await db.collection('campanhas').find().toArray();
-  } else {
-    campaigns = await db.collection('campanhas').find({ usuario_id: req.user.id }).toArray();
-  }
-  res.json(mapIds(campaigns));
+  try {
+    const db = getDb();
+    let query = 'SELECT * FROM campanhas';
+    let params: any[] = [];
+    
+    if (req.user.nivel !== 'admin') {
+      query += ' WHERE usuario_id = ?';
+      params.push(req.user.id);
+    }
+    
+    const [campaigns]: any = await db.query(query, params);
+    res.json(campaigns.map((c: any) => ({ ...c, id: c.id.toString(), totem_id: c.totem_id ? c.totem_id.toString() : null })));
+  } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
 app.post('/api/playlists', authenticateToken, upload.single('arquivo'), async (req: any, res) => {
@@ -372,17 +342,14 @@ app.post('/api/playlists', authenticateToken, upload.single('arquivo'), async (r
     }
     
     const db = getDb();
-    await db.collection('campanhas').insertOne({
-      usuario_id: req.user.id,
-      totem_id: totem_id ? totem_id : null,
-      titulo: titulo || '',
-      tipo_midia: tipo_midia || '',
-      tempo_exibicao: Number(tempo_exibicao) || 0,
-      data_inicio: data_inicio || '',
-      data_fim: data_fim || '',
-      arquivo_url: finalUrl,
-      ativo: 1
-    });
+    const tId = totem_id ? totem_id : null;
+    const inicio = data_inicio ? data_inicio.replace('T', ' ').substring(0, 19) : null;
+    const fim = data_fim ? data_fim.replace('T', ' ').substring(0, 19) : null;
+    
+    await db.execute(
+      'INSERT INTO campanhas (usuario_id, totem_id, titulo, tipo_midia, tempo_exibicao, data_inicio, data_fim, arquivo_url, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)',
+      [req.user.id, tId, titulo || '', tipo_midia || '', Number(tempo_exibicao) || 0, inicio, fim, finalUrl]
+    );
     
     res.json({ message: 'Mídia adicionada' });
   } catch (err: any) {
@@ -398,24 +365,22 @@ app.put('/api/playlists/:id', authenticateToken, upload.single('arquivo'), async
        finalUrl = await handleFileUpload(req.file, ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.webm', '.avi', '.mov']);
     }
     
-    const updateFields: any = {
-       totem_id: totem_id ? totem_id : null,
-       titulo: titulo || '',
-       tipo_midia: tipo_midia || '',
-       tempo_exibicao: Number(tempo_exibicao) || 0,
-       data_inicio: data_inicio || '',
-       data_fim: data_fim || ''
-    };
-    
-    if (finalUrl !== undefined && finalUrl !== '') {
-       updateFields.arquivo_url = finalUrl;
-    }
+    const tId = totem_id ? totem_id : null;
+    const inicio = data_inicio ? data_inicio.replace('T', ' ').substring(0, 19) : null;
+    const fim = data_fim ? data_fim.replace('T', ' ').substring(0, 19) : null;
     
     const db = getDb();
-    await db.collection('campanhas').updateOne(
-       { _id: new ObjectId(req.params.id), usuario_id: req.user.id },
-       { $set: updateFields }
-    );
+    if (finalUrl !== undefined && finalUrl !== '') {
+       await db.execute(
+         'UPDATE campanhas SET totem_id=?, titulo=?, tipo_midia=?, tempo_exibicao=?, data_inicio=?, data_fim=?, arquivo_url=? WHERE id=? AND usuario_id=?',
+         [tId, titulo||'', tipo_midia||'', Number(tempo_exibicao)||0, inicio, fim, finalUrl, req.params.id, req.user.id]
+       );
+    } else {
+       await db.execute(
+         'UPDATE campanhas SET totem_id=?, titulo=?, tipo_midia=?, tempo_exibicao=?, data_inicio=?, data_fim=? WHERE id=? AND usuario_id=?',
+         [tId, titulo||'', tipo_midia||'', Number(tempo_exibicao)||0, inicio, fim, req.params.id, req.user.id]
+       );
+    }
     
     res.json({ message: 'Mídia atualizada' });
   } catch (err: any) {
@@ -424,9 +389,11 @@ app.put('/api/playlists/:id', authenticateToken, upload.single('arquivo'), async
 });
 
 app.delete('/api/playlists/:id', authenticateToken, async (req: any, res) => {
-   const db = getDb();
-   await db.collection('campanhas').deleteOne({ _id: new ObjectId(req.params.id), usuario_id: req.user.id });
-   res.json({ message: 'Midia deletada' });
+   try {
+     const db = getDb();
+     await db.execute('DELETE FROM campanhas WHERE id = ? AND usuario_id = ?', [req.params.id, req.user.id]);
+     res.json({ message: 'Midia deletada' });
+   } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
 // --- Vercel Blob Configuration and Upload signature routes ---
@@ -442,7 +409,6 @@ app.post('/api/blob/upload', async (req, res) => {
       body: req.body,
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        // Generate direct upload permission token
         return {
           allowedContentTypes: [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
@@ -453,7 +419,6 @@ app.post('/api/blob/upload', async (req, res) => {
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Log upload completed successfully
         console.log('Vercel Blob upload completed:', blob.url);
       },
     });
@@ -473,7 +438,9 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
 
     const deviceIdClean = String(rawDeviceId).trim();
     const db = getDb();
-    const totem = await db.collection('totens').findOne({ device_id: deviceIdClean });
+    
+    const [totens]: any = await db.query('SELECT * FROM totens WHERE device_id = ? LIMIT 1', [deviceIdClean]);
+    const totem = totens[0];
     
     if (!totem) {
       return res.json({ 
@@ -483,7 +450,9 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
       });
     }
 
-    const user = await db.collection('usuarios').findOne({ _id: new ObjectId(totem.usuario_id) });
+    const [usuarios]: any = await db.query('SELECT * FROM usuarios WHERE id = ? LIMIT 1', [totem.usuario_id]);
+    const user = usuarios[0];
+    
     if (!user || user.status_licenca !== 'ativa' || new Date(user.validade_licenca) < new Date()) {
        return res.json({
            erro: "Licenca expirada ou inativa.",
@@ -491,20 +460,20 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
        });
     }
 
-    await db.collection('totens').updateOne(
-       { _id: totem._id },
-       { $set: { status: 'online', ultima_sincronizacao: new Date() } }
-    );
+    await db.execute('UPDATE totens SET status = ?, ultima_sincronizacao = NOW() WHERE id = ?', ['online', totem.id]);
 
-    const now = new Date().toISOString();
     const hostUrl = process.env.APP_URL || `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
-    const playlistRaw = await db.collection('campanhas').find({
-      $or: [ { totem_id: totem._id.toString() }, { totem_id: null } ],
-      ativo: 1,
-      data_inicio: { $lte: now },
-      data_fim: { $gte: now }
-    }).project({ _id: 1, tipo_midia: 1, arquivo_url: 1, tempo_exibicao: 1 }).toArray();
+    // Get active playlists for this totem or global (totem_id IS NULL)
+    // Considering dates (if data_inicio/data_fim exist)
+    const [playlistRaw]: any = await db.query(`
+      SELECT id, tipo_midia, arquivo_url, tempo_exibicao 
+      FROM campanhas 
+      WHERE (totem_id = ? OR totem_id IS NULL) 
+        AND ativo = 1 
+        AND (data_inicio IS NULL OR data_inicio <= NOW())
+        AND (data_fim IS NULL OR data_fim >= NOW())
+    `, [totem.id]);
     
     const playlist = playlistRaw.map((item: any) => {
       let url = item.arquivo_url;
@@ -512,14 +481,13 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
         url = hostUrl + url;
       }
       return {
-        id: item._id.toString(),
+        id: item.id.toString(),
         tipo_midia: item.tipo_midia,
         url_arquivo: url,
         tempo_exibicao: item.tempo_exibicao
       };
     });
 
-    // Retornar a playlist no formato esperado pelo Totem
     res.json({
       totem_id: deviceIdClean,
       playlist
@@ -548,7 +516,6 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// Only start the server if we're not in a serverless environment (like Vercel)
 if (process.env.VERCEL !== '1') {
   const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, "0.0.0.0", () => {
@@ -556,5 +523,4 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
-// Export app for serverless function support (Vercel redeployment trigger)
 export default app;

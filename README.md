@@ -18,3 +18,4 @@ View your app in AI Studio: https://ai.studio/apps/87635be1-cb4c-45bc-8769-1e7fc
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+# VisioIndoorVercel

@@ -64,8 +64,9 @@ export async function initDb() {
     
     client = new MongoClient(uri);
     await client.connect();
-    dbInstance = client.db('visioindoor'); // You can specify the db name or it defaults to the URI one
-    console.log('Connected to MongoDB database (visioindoor).');
+    const dbName = process.env.MONGO_DB_NAME || 'visioindoor';
+    dbInstance = client.db(dbName);
+    console.log(`Connected to MongoDB database (${dbName}).`);
 
     // Create unique indexes
     await dbInstance.collection('usuarios').createIndex({ email: 1 }, { unique: true });

@@ -78,7 +78,7 @@ export default function AdminDashboard() {
       {/* Metrics Row (4 Columns matching style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card 1: Total de Usuários/Agências (Dark green card) */}
-        <div className="bg-[#0b462c] text-white p-6 rounded-[24px] relative overflow-hidden shadow-md flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300">
+        <Link to="/admin/users" className="bg-[#0b462c] text-white p-6 rounded-[24px] relative overflow-hidden shadow-md flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300 block">
           <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-emerald-500/10 blur-xl"></div>
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-200">Clientes & Agências</span>
@@ -95,10 +95,10 @@ export default function AdminDashboard() {
               <span className="text-[10px] text-emerald-200/70">Contas administradas</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Card 2: Totens Totais */}
-        <div className="bg-white border border-[#e8edf2] p-6 rounded-[24px] shadow-sm flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300">
+        <Link to="/admin/totems" className="bg-white border border-[#e8edf2] p-6 rounded-[24px] shadow-sm flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300 block">
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8b9aa5]">Totens Globais</span>
             <span className="w-8 h-8 rounded-full bg-[#f4f6f8] flex items-center justify-center text-[#0b462c] text-xs">
@@ -114,10 +114,10 @@ export default function AdminDashboard() {
               <span className="text-[10px] text-[#8b9aa5]">Telas registradas no app</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Card 3: Licenças Ativas */}
-        <div className="bg-white border border-[#e8edf2] p-6 rounded-[24px] shadow-sm flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300">
+        <Link to="/admin/users" className="bg-white border border-[#e8edf2] p-6 rounded-[24px] shadow-sm flex flex-col justify-between min-h-[140px] group hover:-translate-y-1 transition-all duration-300 block">
           <div className="flex justify-between items-start">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#8b9aa5]">Licenças Ativas</span>
             <span className="w-8 h-8 rounded-full bg-[#f4f6f8] flex items-center justify-center text-[#0b462c] text-xs">
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
               <span className="text-[10px] text-[#8b9aa5]">Em conformidade</span>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Admin Operations Grid */}

@@ -235,9 +235,25 @@ app.get('/api/totems', authenticateToken, async (req: any, res) => {
 
     let totems;
     if (req.user.nivel === 'admin') {
-      totems = await db.collection('totens').find().toArray();
+      const rawTotems = await db.collection('totens').find().toArray();
+      const users = await db.collection('usuarios').find().toArray();
+      const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+
+      totems = rawTotems.map((t: any) => {
+        const creator = userMap.get(t.usuario_id);
+        return {
+          ...t,
+          data_cadastro: t._id.getTimestamp ? t._id.getTimestamp() : new Date(),
+          usuario_nome: creator ? creator.nome : 'N/A',
+          usuario_email: creator ? creator.email : 'N/A'
+        };
+      });
     } else {
-      totems = await db.collection('totens').find({ usuario_id: req.user.id }).toArray();
+      const rawTotems = await db.collection('totens').find({ usuario_id: req.user.id }).toArray();
+      totems = rawTotems.map((t: any) => ({
+        ...t,
+        data_cadastro: t._id.getTimestamp ? t._id.getTimestamp() : new Date()
+      }));
     }
     res.json(mapIds(totems));
   } catch(err: any) {
@@ -258,10 +274,35 @@ app.post('/api/totems', authenticateToken, async (req: any, res) => {
   }
 });
 
+app.put('/api/totems/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const { nome, device_id } = req.body;
+    const db = getDb();
+    const query = req.user.nivel === 'admin' 
+      ? { _id: new ObjectId(req.params.id) } 
+      : { _id: new ObjectId(req.params.id), usuario_id: req.user.id };
+      
+    await db.collection('totens').updateOne(query, {
+      $set: { nome, device_id }
+    });
+    res.json({ message: 'Totem atualizado' });
+  } catch (err: any) {
+    res.status(400).json({ error: 'Erro ao atualizar totem' });
+  }
+});
+
 app.delete('/api/totems/:id', authenticateToken, async (req: any, res) => {
-  const db = getDb();
-  await db.collection('totens').deleteOne({ _id: new ObjectId(req.params.id), usuario_id: req.user.id });
-  res.json({ message: 'Totem removido' });
+  try {
+    const db = getDb();
+    const query = req.user.nivel === 'admin' 
+      ? { _id: new ObjectId(req.params.id) } 
+      : { _id: new ObjectId(req.params.id), usuario_id: req.user.id };
+      
+    await db.collection('totens').deleteOne(query);
+    res.json({ message: 'Totem removido' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Playlists Routes ---

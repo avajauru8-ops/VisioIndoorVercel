@@ -35,7 +35,7 @@ async function handleFileUpload(file: Express.Multer.File, allowedExtensions: st
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       const { put } = await import('@vercel/blob');
       const blob = await put(`uploads/${filename}`, file.buffer, { access: 'public' });
-      return blob.url;
+      return filename;
     } else {
       throw new Error("Vercel Blob Storage is not configured. Add BLOB_READ_WRITE_TOKEN.");
     }
@@ -45,7 +45,7 @@ async function handleFileUpload(file: Express.Multer.File, allowedExtensions: st
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     fs.writeFileSync(path.join(uploadDir, filename), file.buffer);
-    return `/uploads/${filename}`;
+    return filename;
   }
 }
 
@@ -329,7 +329,15 @@ app.get('/api/playlists', authenticateToken, async (req: any, res) => {
     }
     
     const [campaigns]: any = await db.query(query, params);
-    res.json(campaigns.map((c: any) => ({ ...c, id: c.id.toString(), totem_id: c.totem_id ? c.totem_id.toString() : null })));
+    res.json(campaigns.map((c: any) => {
+      let url = c.arquivo_url;
+      if (url && !url.startsWith('http')) {
+        if (url.startsWith('/uploads/')) url = url.substring(9);
+        if (url.startsWith('uploads/')) url = url.substring(8);
+        url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
+      }
+      return { ...c, id: c.id.toString(), totem_id: c.totem_id ? c.totem_id.toString() : null, arquivo_url: url };
+    }));
   } catch(err: any) { res.status(500).json({error: err.message}); }
 });
 
@@ -477,8 +485,10 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
     
     const playlist = playlistRaw.map((item: any) => {
       let url = item.arquivo_url;
-      if (url && url.startsWith('/uploads/')) {
-        url = hostUrl + url;
+      if (url && !url.startsWith('http')) {
+        if (url.startsWith('/uploads/')) url = url.substring(9);
+        if (url.startsWith('uploads/')) url = url.substring(8);
+        url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
       }
       return {
         id: item.id.toString(),

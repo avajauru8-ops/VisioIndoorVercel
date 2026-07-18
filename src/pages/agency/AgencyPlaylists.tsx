@@ -121,7 +121,7 @@ export default function AgencyPlaylists() {
           access: 'public',
           handleUploadUrl: '/api/blob/upload'
         });
-        bodyData.arquivo_url = blob.url;
+        bodyData.arquivo_url = uniqueFilename.replace('uploads/', '');
       }
 
       if (useBlob) {

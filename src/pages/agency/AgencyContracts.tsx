@@ -64,32 +64,32 @@ Data: ${format(new Date(), 'dd/MM/yyyy')}
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <FileText className="w-6 h-6 text-teal-500" />
+        <h2 className="text-2xl font-extrabold text-[#0b462c] tracking-tight flex items-center gap-2">
+          <FileText className="w-6 h-6 text-emerald-600" />
           Gerador de Contratos
         </h2>
-        <p className="text-sm text-gray-400 mt-1">Gere contratos PDF rapidamente com os dados da sua agência.</p>
+        <p className="text-xs text-[#8b9aa5] font-medium mt-1">Gere contratos PDF rapidamente com os dados da sua agência.</p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
          {/* Form */}
-         <div className="bg-gray-950 border border-gray-800 rounded-xl p-6 h-fit">
-            <h3 className="text-lg font-medium text-gray-200 mb-4">Dados do Cliente</h3>
+         <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 h-fit shadow-sm">
+            <h3 className="text-[#0b462c] text-xs font-bold uppercase tracking-wider mb-4">Dados do Cliente</h3>
             <div className="space-y-4">
                <div>
-                 <label className="block text-sm font-medium text-gray-400 mb-1">Nome / Razão Social</label>
-                 <input type="text" value={nome} onChange={e=>setNome(e.target.value)} className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-teal-500 outline-none" />
+                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nome / Razão Social</label>
+                 <input type="text" value={nome} onChange={e=>setNome(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
                </div>
                <div>
-                 <label className="block text-sm font-medium text-gray-400 mb-1">CPF / CNPJ</label>
-                 <input type="text" value={cpfCnpj} onChange={e=>setCpfCnpj(e.target.value)} className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-teal-500 outline-none" />
+                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">CPF / CNPJ</label>
+                 <input type="text" value={cpfCnpj} onChange={e=>setCpfCnpj(e.target.value)} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all" />
                </div>
                <div>
-                 <label className="block text-sm font-medium text-gray-400 mb-1">Endereço Completo</label>
-                 <textarea value={endereco} onChange={e=>setEndereco(e.target.value)} rows={3} className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-teal-500 outline-none resize-none" />
+                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Endereço Completo</label>
+                 <textarea value={endereco} onChange={e=>setEndereco(e.target.value)} rows={3} className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all resize-none" />
                </div>
                
-               <button onClick={generatePDF} className="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
+               <button onClick={generatePDF} className="w-full flex items-center justify-center gap-2 bg-[#0b462c] hover:bg-[#082a1b] text-white rounded-full py-3 text-xs font-bold transition-all shadow-sm">
                  <Download className="w-4 h-4" />
                  Gerar PDF
                </button>
@@ -97,8 +97,8 @@ Data: ${format(new Date(), 'dd/MM/yyyy')}
          </div>
          
          {/* Preview */}
-         <div className="bg-white rounded-xl p-8 shadow-xl min-h-[600px] text-gray-800 font-serif text-sm">
-            <h1 className="text-center font-bold text-lg mb-8 uppercase">Contrato de Prestação de Serviços Publicitários</h1>
+         <div className="bg-white rounded-[24px] border border-[#e8edf2] p-8 shadow-sm min-h-[600px] text-gray-800 font-serif text-sm">
+            <h1 className="text-center font-bold text-lg mb-8 uppercase text-zinc-800">Contrato de Prestação de Serviços Publicitários</h1>
             
             <p className="text-justify mb-4 leading-relaxed">
                Pelo presente instrumento, de um lado, <span className="font-bold">{profile.nome || '________________'}</span>, inscrita no CPF/CNPJ <span className="font-bold">{profile.cpf_cnpj || '________________'}</span>, com sede em <span className="font-bold">{profile.endereco || '________________'}</span>, <span className="font-bold">{profile.cidade || '____'} - {profile.estado || '____'}</span>, doravante denominada CONTRATADA.

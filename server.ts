@@ -9,7 +9,7 @@ import { ObjectId } from 'mongodb';
 import { getDb, initDb } from './src/db/index.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import { handleUpload } from '@vercel/blob';
+import { handleUpload } from '@vercel/blob/client';
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
@@ -548,7 +548,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // Only start the server if we're not in a serverless environment (like Vercel)
 if (process.env.VERCEL !== '1') {
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });

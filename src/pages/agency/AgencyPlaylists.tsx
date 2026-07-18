@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../lib/api';
 import { MonitorPlay, UploadCloud, Film, Image as ImageIcon, Trash2, Edit2, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 interface Totem {
   id: string;
@@ -36,8 +36,8 @@ export default function AgencyPlaylists() {
   const [titulo, setTitulo] = useState('');
   const [tipoMidia, setTipoMidia] = useState<'video' | 'imagem'>('imagem');
   const [tempoExibicao, setTempoExibicao] = useState(15);
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [dataInicio, setDataInicio] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+  const [dataFim, setDataFim] = useState(format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"));
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -84,6 +84,10 @@ export default function AgencyPlaylists() {
     setTitulo('');
     setFile(null);
     setFormTotemId('');
+    setTipoMidia('imagem');
+    setTempoExibicao(15);
+    setDataInicio(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    setDataFim(format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

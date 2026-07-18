@@ -332,9 +332,14 @@ app.get('/api/playlists', authenticateToken, async (req: any, res) => {
     res.json(campaigns.map((c: any) => {
       let url = c.arquivo_url;
       if (url && !url.startsWith('http')) {
-        if (url.startsWith('/uploads/')) url = url.substring(9);
-        if (url.startsWith('uploads/')) url = url.substring(8);
-        url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
+        if (c.tipo_midia === 'noticia') {
+          const hostUrl = process.env.APP_URL || 'http://localhost:3000';
+          url = hostUrl + url;
+        } else {
+          if (url.startsWith('/uploads/')) url = url.substring(9);
+          if (url.startsWith('uploads/')) url = url.substring(8);
+          url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
+        }
       }
       return { ...c, id: c.id.toString(), totem_id: c.totem_id ? c.totem_id.toString() : null, arquivo_url: url };
     }));
@@ -486,9 +491,13 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
     const playlist = playlistRaw.map((item: any) => {
       let url = item.arquivo_url;
       if (url && !url.startsWith('http')) {
-        if (url.startsWith('/uploads/')) url = url.substring(9);
-        if (url.startsWith('uploads/')) url = url.substring(8);
-        url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
+        if (item.tipo_midia === 'noticia') {
+          url = hostUrl + url;
+        } else {
+          if (url.startsWith('/uploads/')) url = url.substring(9);
+          if (url.startsWith('uploads/')) url = url.substring(8);
+          url = 'https://ioiv3vkmo3gblbxw.public.blob.vercel-storage.com/uploads/' + url;
+        }
       }
       return {
         id: item.id.toString(),

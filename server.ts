@@ -520,7 +520,7 @@ app.all(['/api.php', '/api/get_playlist.php'], async (req, res) => {
     });
 
     res.json({
-      totem_id: device_id,
+      totem_id: deviceIdClean,
       playlist
     });
   } catch (err: any) {

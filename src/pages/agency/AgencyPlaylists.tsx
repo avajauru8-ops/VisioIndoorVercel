@@ -104,7 +104,9 @@ export default function AgencyPlaylists() {
       if (file && useBlob) {
         // Direct Client-Side Upload to Vercel Blob to bypass 4.5MB server limit
         const { upload } = await import('@vercel/blob/client');
-        const blob = await upload(file.name, file, {
+        const sanitizedOriginal = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const uniqueFilename = `uploads/${Date.now()}-${sanitizedOriginal}`;
+        const blob = await upload(uniqueFilename, file, {
           access: 'public',
           handleUploadUrl: '/api/blob/upload'
         });

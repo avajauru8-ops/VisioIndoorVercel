@@ -153,6 +153,37 @@ app.put('/api/admin/users/:id/license', authenticateToken, requireAdmin, async (
   res.json({ message: 'Licença atualizada' });
 });
 
+app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { nome, email, senha, nivel, status_licenca, validade_licenca } = req.body;
+    const db = getDb();
+    
+    const updateFields: any = {
+      nome: String(nome),
+      email: String(email),
+      nivel: String(nivel),
+      status_licenca: String(status_licenca),
+      validade_licenca: String(validade_licenca)
+    };
+    
+    if (senha && senha.trim() !== '') {
+      updateFields.senha = bcrypt.hashSync(senha, 10);
+    }
+    
+    await db.collection('usuarios').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: updateFields }
+    );
+    res.json({ message: 'Usuário atualizado com sucesso' });
+  } catch (err: any) {
+    if (err.code === 11000) {
+      res.status(400).json({ error: 'O email já está em uso por outro usuário.' });
+    } else {
+      res.status(400).json({ error: 'Erro ao atualizar usuário.' });
+    }
+  }
+});
+
 app.get('/api/admin/settings', authenticateToken, async (req, res) => {
   const db = getDb();
   const settings = await db.collection('configuracoes_admin').findOne({});

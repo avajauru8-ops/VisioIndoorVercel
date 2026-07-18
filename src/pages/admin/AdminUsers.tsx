@@ -17,7 +17,8 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingLicense, setEditingLicense] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editSenha, setEditSenha] = useState('');
 
   // Form
   const [nome, setNome] = useState('');
@@ -50,27 +51,37 @@ export default function AdminUsers() {
         body: JSON.stringify({ nome, cpf, email, senha, nivel, validade_licenca: new Date(validade).toISOString() }),
       });
       setShowForm(false);
+      setNome('');
+      setCpf('');
+      setEmail('');
+      setSenha('');
+      setValidade('');
       loadUsers();
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  const handleUpdateLicense = async (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingLicense) return;
+    if (!editingUser) return;
     try {
-      await apiFetch(`/api/admin/users/${editingLicense.id}/license`, {
+      await apiFetch(`/api/admin/users/${editingUser.id}`, {
         method: 'PUT',
         body: JSON.stringify({ 
-           status_licenca: editingLicense.status_licenca, 
-           validade_licenca: new Date(editingLicense.validade_licenca).toISOString() 
+           nome: editingUser.nome,
+           email: editingUser.email,
+           senha: editSenha,
+           nivel: editingUser.nivel,
+           status_licenca: editingUser.status_licenca, 
+           validade_licenca: new Date(editingUser.validade_licenca).toISOString() 
         }),
       });
-      setEditingLicense(null);
+      setEditingUser(null);
+      setEditSenha('');
       loadUsers();
-    } catch (err) {
-      alert('Erro ao atualizar licença');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao atualizar usuário');
     }
   };
 
@@ -123,34 +134,78 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {editingLicense && (
+      {editingUser && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div className="bg-white border border-[#e8edf2] rounded-[24px] p-8 w-full max-w-md shadow-lg animate-in fade-in zoom-in-95 duration-200">
-              <h3 className="text-[#0b462c] text-sm font-extrabold uppercase tracking-wider mb-4">Gerenciar Licença: {editingLicense.nome}</h3>
-              <form onSubmit={handleUpdateLicense} className="space-y-4">
+           <div className="bg-white border border-[#e8edf2] rounded-[24px] p-8 w-full max-w-lg shadow-lg animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-[#0b462c] text-sm font-extrabold uppercase tracking-wider mb-6">Editar Usuário: {editingUser.nome}</h3>
+              <form onSubmit={handleUpdateUser} className="space-y-4">
                  <div>
-                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Status da Licença</label>
-                   <select 
-                     value={editingLicense.status_licenca} 
-                     onChange={e => setEditingLicense({...editingLicense, status_licenca: e.target.value as any})} 
-                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none"
-                   >
-                     <option value="ativa">Ativa</option>
-                     <option value="expirada">Expirada / Suspensa</option>
-                   </select>
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nome</label>
+                   <input 
+                     type="text" 
+                     required 
+                     value={editingUser.nome} 
+                     onChange={e => setEditingUser({...editingUser, nome: e.target.value})} 
+                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none transition-all" 
+                   />
                  </div>
                  <div>
-                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Data de Expiração</label>
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Email</label>
+                   <input 
+                     type="email" 
+                     required 
+                     value={editingUser.email} 
+                     onChange={e => setEditingUser({...editingUser, email: e.target.value})} 
+                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none transition-all" 
+                   />
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nova Senha (Deixe em branco para manter a atual)</label>
+                   <input 
+                     type="password" 
+                     value={editSenha} 
+                     onChange={e => setEditSenha(e.target.value)} 
+                     placeholder="••••••"
+                     className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-4 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none transition-all" 
+                   />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Nível de Acesso</label>
+                     <select 
+                       value={editingUser.nivel} 
+                       onChange={e => setEditingUser({...editingUser, nivel: e.target.value as any})} 
+                       className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none"
+                     >
+                       <option value="agencia">Agência (Cliente)</option>
+                       <option value="admin">Administrador</option>
+                     </select>
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Status da Licença</label>
+                     <select 
+                       value={editingUser.status_licenca} 
+                       onChange={e => setEditingUser({...editingUser, status_licenca: e.target.value as any})} 
+                       className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm focus:border-emerald-500 outline-none"
+                     >
+                       <option value="ativa">Ativa</option>
+                       <option value="expirada">Expirada / Suspensa</option>
+                     </select>
+                   </div>
+                 </div>
+                 <div>
+                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Data de Expiração da Licença</label>
                    <input 
                      type="date" 
-                     value={editingLicense.validade_licenca.split('T')[0]} 
-                     onChange={e => setEditingLicense({...editingLicense, validade_licenca: e.target.value})} 
+                     required
+                     value={editingUser.validade_licenca.split('T')[0]} 
+                     onChange={e => setEditingUser({...editingUser, validade_licenca: e.target.value})} 
                      className="w-full bg-[#f4f6f8] border border-zinc-200 rounded-xl px-3 py-2.5 text-zinc-800 text-sm font-mono focus:border-emerald-500 outline-none [color-scheme:light]" 
                    />
                  </div>
                  <div className="flex justify-end gap-3 pt-6">
-                    <button type="button" onClick={() => setEditingLicense(null)} className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-800 border border-zinc-200 hover:border-zinc-300 rounded-full transition-colors">Cancelar</button>
-                    <button type="submit" className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm">Atualizar Licença</button>
+                    <button type="button" onClick={() => { setEditingUser(null); setEditSenha(''); }} className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-800 border border-zinc-200 hover:border-zinc-300 rounded-full transition-colors">Cancelar</button>
+                    <button type="submit" className="px-5 py-2.5 bg-[#0b462c] hover:bg-[#082a1b] text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm">Salvar Alterações</button>
                  </div>
               </form>
            </div>
@@ -204,7 +259,7 @@ export default function AdminUsers() {
                           {format(new Date(u.validade_licenca), 'dd/MM/yyyy')}
                        </td>
                        <td className="px-6 py-4 text-right font-sans">
-                          <button onClick={() => setEditingLicense(u)} className="text-zinc-500 hover:text-[#0b462c] transition-all text-[9px] font-extrabold tracking-widest uppercase border border-zinc-200 hover:border-[#e8edf2] rounded-full px-4 py-2 bg-zinc-50 hover:bg-[#e8f5ed]/30 shadow-xs">
+                          <button onClick={() => setEditingUser(u)} className="text-zinc-500 hover:text-[#0b462c] transition-all text-[9px] font-extrabold tracking-widest uppercase border border-zinc-200 hover:border-[#e8edf2] rounded-full px-4 py-2 bg-zinc-50 hover:bg-[#e8f5ed]/30 shadow-xs">
                              Editar
                           </button>
                        </td>

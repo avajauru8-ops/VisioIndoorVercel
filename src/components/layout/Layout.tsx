@@ -86,10 +86,10 @@ export default function Layout() {
     <>
       <div className="flex flex-col flex-1 min-h-0">
         {/* Brand Logo */}
-        <div className="p-6 border-b border-[#e8edf2] flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-6 border-b border-[#e8edf2] flex items-center justify-between relative">
+          <div className={cn("flex items-center gap-2", sysSettings.logo_url ? "mx-auto justify-center" : "")}>
             {sysSettings.logo_url ? (
-              <img src={sysSettings.logo_url} alt="Logo" className="h-8 max-w-[140px] object-contain shrink-0" />
+              <img src={sysSettings.logo_url} alt="Logo" className="h-16 max-w-[180px] object-contain shrink-0" />
             ) : (
               <>
                 <div className="w-8 h-8 rounded-full bg-emerald-50 border-2 border-emerald-600 flex items-center justify-center shadow-sm">
@@ -110,7 +110,7 @@ export default function Layout() {
           </div>
           <button 
             onClick={() => setIsMobileSidebarOpen(false)}
-            className="lg:hidden p-1 text-zinc-400 hover:text-zinc-700 transition-colors"
+            className="lg:hidden absolute right-6 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  BarChart, 
-  Bar, 
   Cell, 
-  XAxis, 
-  YAxis, 
   Tooltip as RechartsTooltip, 
   ResponsiveContainer,
   PieChart,
@@ -15,15 +11,12 @@ import {
 import { 
   Tv, 
   MonitorPlay, 
-  Users, 
   AlertCircle, 
   CheckCircle2, 
   ArrowUpRight, 
   Plus, 
-  Search, 
   Play, 
   Pause, 
-  Square,
   Clock,
   Sparkles
 } from 'lucide-react';
@@ -95,17 +88,6 @@ export default function AgencyDashboard() {
     });
   };
 
-  // Mock bar chart data - Weekly network performance
-  const barChartData = [
-    { name: 'D', value: 92 },
-    { name: 'S', value: 96 },
-    { name: 'T', value: 98 },
-    { name: 'Q', value: 100 },
-    { name: 'Q', value: 95 },
-    { name: 'S', value: 97 },
-    { name: 'S', value: 99 },
-  ];
-
   // Calculated network health percentage
   const networkHealth = stats.total > 0 ? Math.round((stats.online / stats.total) * 100) : 100;
 
@@ -113,13 +95,6 @@ export default function AgencyDashboard() {
   const healthPieData = [
     { name: 'Online', value: stats.online || 1, color: '#10b981' },
     { name: 'Offline', value: stats.offline, color: '#f3f4f6' }
-  ];
-
-  // Mock team members list (matching reference image structure)
-  const teamMembers = [
-    { name: 'Alexandra Deff', role: 'Gerente de Contas', task: 'Campanha Adidas Principal', status: 'Completed', avatar: 'AD' },
-    { name: 'Edwin Adenike', role: 'Suporte Técnico', task: 'Configuração Totem Aeroporto', status: 'In Progress', avatar: 'EA' },
-    { name: 'Isaac Oluwatamilorun', role: 'Mídia / Conteúdo', task: 'Design de Playlist Black Friday', status: 'Pending', avatar: 'IO' },
   ];
 
   return (
@@ -228,51 +203,16 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
-      {/* Main Grid: Analytical Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Project Analytics: Availability bar chart (Left 1st column) */}
-        <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
-          <div>
-            <h4 className="text-sm font-extrabold text-[#0b462c] uppercase tracking-wider">Histórico de Conexão</h4>
-            <p className="text-[10px] text-[#8b9aa5] mt-1">Disponibilidade percentual dos totens esta semana</p>
-          </div>
-
-          <div className="h-44 mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8b9aa5', fontSize: 10, fontWeight: 'bold' }} />
-                <YAxis domain={[80, 100]} axisLine={false} tickLine={false} tick={{ fill: '#8b9aa5', fontSize: 9 }} />
-                <Bar 
-                  dataKey="value" 
-                  fill="#0b462c" 
-                  radius={[10, 10, 0, 0]}
-                  barSize={18}
-                >
-                  {barChartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.value === 100 ? '#10b981' : '#0b462c'} 
-                      fillOpacity={index === 3 || index === 6 ? 1 : 0.85}
-                    />
-                  ))}
-                </Bar>
-                <RechartsTooltip 
-                  cursor={{ fill: '#f8fafc', radius: 10 }}
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e8edf2', borderRadius: '12px', fontSize: '10px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Reminders / Status Updates (Middle column) */}
+      {/* Main Grid: Analytical Cards (2 Columns) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Reminders / Status Updates */}
         <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
           <div>
             <h4 className="text-sm font-extrabold text-[#0b462c] uppercase tracking-wider">Lembretes & Alertas</h4>
             <p className="text-[10px] text-[#8b9aa5] mt-1">Notificações e ações importantes do sistema</p>
           </div>
 
-          <div className="my-auto space-y-4">
+          <div className="my-6 space-y-4">
             <div className="p-4 rounded-2xl bg-[#fcfdfe] border border-[#e8edf2] flex items-start gap-3">
               <span className="w-2 h-2 mt-1.5 bg-emerald-500 rounded-full shrink-0"></span>
               <div>
@@ -298,7 +238,7 @@ export default function AgencyDashboard() {
           </Link>
         </div>
 
-        {/* Recent Telas / Totens list (Right column) */}
+        {/* Recent Telas / Totens list */}
         <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
           <div className="flex justify-between items-center">
             <div>
@@ -341,48 +281,10 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Team Collaboration */}
-        <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm min-h-[280px] lg:col-span-1 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center">
-              <h4 className="text-sm font-extrabold text-[#0b462c] uppercase tracking-wider">Suporte & Equipe</h4>
-              <button className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                + Novo membro
-              </button>
-            </div>
-            <p className="text-[10px] text-[#8b9aa5] mt-1">Colaboradores da agência</p>
-          </div>
-
-          <div className="mt-4 space-y-3.5 flex-1 justify-center flex flex-col">
-            {teamMembers.map((member, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-100 to-emerald-200 text-[#0b462c] text-xs font-bold flex items-center justify-center shadow-sm">
-                    {member.avatar}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-zinc-700">{member.name}</p>
-                    <p className="text-[9px] text-zinc-400 leading-none mt-0.5">{member.role}</p>
-                  </div>
-                </div>
-                <div>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                    member.status === 'Completed' ? 'bg-[#e8f5ed] text-emerald-600' :
-                    member.status === 'In Progress' ? 'bg-amber-50 text-amber-600' :
-                    'bg-zinc-100 text-zinc-600'
-                  }`}>
-                    {member.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      {/* Bottom Row (2 Columns) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Progress Gauge (Network health) */}
-        <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm min-h-[280px] lg:col-span-1 flex flex-col justify-between">
+        <div className="bg-white border border-[#e8edf2] rounded-[24px] p-6 shadow-sm min-h-[280px] flex flex-col justify-between">
           <div>
             <h4 className="text-sm font-extrabold text-[#0b462c] uppercase tracking-wider">Saúde da Rede</h4>
             <p className="text-[10px] text-[#8b9aa5] mt-1">Percentual de conexão geral dos totens</p>
@@ -427,8 +329,8 @@ export default function AgencyDashboard() {
           </div>
         </div>
 
-        {/* Time Tracker Widget (Reprodução timer) */}
-        <div className="bg-gradient-to-br from-[#0b462c] to-[#082a1b] text-white rounded-[24px] p-6 shadow-md min-h-[280px] lg:col-span-1 flex flex-col justify-between relative overflow-hidden group">
+        {/* Time Tracker Widget */}
+        <div className="bg-gradient-to-br from-[#0b462c] to-[#082a1b] text-white rounded-[24px] p-6 shadow-md min-h-[280px] flex flex-col justify-between relative overflow-hidden group">
           {/* Waves and decorative grid */}
           <div className="absolute inset-0 opacity-15 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-200 via-transparent to-transparent pointer-events-none"></div>
           
